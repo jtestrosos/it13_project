@@ -1,0 +1,333 @@
+﻿@page "/reports"
+@layout DashboardLayout
+@inject HttpClient Http
+
+<PageTitle>Reports & Analytics</PageTitle>
+
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white">Reports & Analytics</h1>
+            <p class="mt-1 text-sm text-slate-400">View and export business reports</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button class="px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Monthly</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Top Stats Cards -->
+    <div class="grid grid-cols-4 gap-6">
+        <!-- Total Revenue -->
+        <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500">Total Revenue</p>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-1">$328,000</h3>
+            <p class="text-xs text-emerald-400">+12.5% from last period</p>
+        </div>
+
+        <!-- Total Profit -->
+        <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500">Total Profit</p>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-1">$94,500</h3>
+            <p class="text-xs text-emerald-400">+11.2% from last period</p>
+        </div>
+
+        <!-- Items Sold -->
+        <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500">Items Sold</p>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-1">5,840</h3>
+            <p class="text-xs text-emerald-400">+8.8% from last period</p>
+        </div>
+
+        <!-- Transactions -->
+        <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500">Transactions</p>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-1">5,840</h3>
+            <p class="text-xs text-slate-400">Last 6 months</p>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+        <div class="border-b border-slate-700/50">
+            <nav class="flex -mb-px">
+                <button @onclick="() => activeTab = 0"
+                        class="@(activeTab == 0 ? "border-blue-500 text-blue-400" : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600") px-6 py-4 text-sm font-medium border-b-2 transition-colors">
+                    Sales Reports
+                </button>
+                <button @onclick="() => activeTab = 1"
+                        class="@(activeTab == 1 ? "border-blue-500 text-blue-400" : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600") px-6 py-4 text-sm font-medium border-b-2 transition-colors">
+                    Inventory Reports
+                </button>
+                <button @onclick="() => activeTab = 2"
+                        class="@(activeTab == 2 ? "border-blue-500 text-blue-400" : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600") px-6 py-4 text-sm font-medium border-b-2 transition-colors">
+                    Purchase Reports
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="p-6">
+            @if (activeTab == 0)
+            {
+                <!-- Sales Reports -->
+                <div class="space-y-6">
+                    <!-- Charts Row -->
+                    <div class="grid grid-cols-2 gap-6">
+                        <!-- Revenue & Profit Trend Chart -->
+                        <div class="bg-slate-900/30 border border-slate-700/50 rounded-lg p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-lg font-semibold text-white">Revenue & Profit Trend</h3>
+                                <button class="px-3 py-1.5 text-xs bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center space-x-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    <span>Export</span>
+                                </button>
+                            </div>
+
+                            <!-- Simple Line Chart Representation -->
+                            <div class="h-64 flex items-end justify-between space-x-2">
+                                @foreach (var month in monthlyData)
+                                {
+                                    <div class="flex-1 flex flex-col items-center space-y-2">
+                                        <div class="w-full relative" style="height: 200px;">
+                                            <!-- Revenue Bar -->
+                                            <div class="absolute bottom-0 w-full bg-gradient-to-t from-blue-500/30 to-blue-500/10 border-t-2 border-blue-400 rounded-t"
+                                                 style="height: @((month.Revenue / 80000.0 * 100))%"
+                                                 title="Revenue: $@month.Revenue">
+                                            </div>
+                                            <!-- Profit Bar (overlaid) -->
+                                            <div class="absolute bottom-0 w-full bg-gradient-to-t from-emerald-500/30 to-emerald-500/10 border-t-2 border-emerald-400 rounded-t"
+                                                 style="height: @((month.Profit / 80000.0 * 100))%"
+                                                 title="Profit: $@month.Profit">
+                                            </div>
+                                        </div>
+                                        <span class="text-xs text-slate-500">@month.Month</span>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Legend -->
+                            <div class="flex items-center justify-center space-x-6 mt-6 pt-4 border-t border-slate-700/50">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-3 h-3 bg-blue-400 rounded-full"></div>
+                                    <span class="text-sm text-slate-400">Revenue ($)</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+                                    <span class="text-sm text-slate-400">Profit ($)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sales by Category Pie Chart -->
+                        <div class="bg-slate-900/30 border border-slate-700/50 rounded-lg p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-lg font-semibold text-white">Sales by Category</h3>
+                                <button class="px-3 py-1.5 text-xs bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center space-x-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    <span>Export</span>
+                                </button>
+                            </div>
+
+                            <!-- Pie Chart (Simple Visual Representation) -->
+                            <div class="flex items-center justify-center h-64">
+                                <div class="relative w-48 h-48">
+                                    <!-- Pie segments using conic-gradient simulation -->
+                                    <div class="w-full h-full rounded-full" style="background: conic-gradient(
+                                            from 0deg,
+                                            #3b82f6 0deg 90deg,
+                                            #8b5cf6 90deg 171deg,
+                                            #ef4444 171deg 234deg,
+                                            #f59e0b 234deg 288deg,
+                                            #10b981 288deg 360deg
+                                        );">
+                                    </div>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="w-24 h-24 bg-slate-900 rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Legend -->
+                            <div class="grid grid-cols-2 gap-3 mt-6">
+                                @foreach (var category in categories)
+                                {
+                                    <div class="flex items-center justify-between p-2 bg-slate-800/30 rounded">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-3 h-3 rounded-full" style="background-color: @category.Color"></div>
+                                            <span class="text-sm text-slate-300">@category.Name</span>
+                                        </div>
+                                        <span class="text-sm font-medium" style="color: @category.Color">@category.Percentage%</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Sales Report Table -->
+                    <div class="bg-slate-900/30 border border-slate-700/50 rounded-lg overflow-hidden">
+                        <div class="p-6 border-b border-slate-700/50 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-white">Detailed Sales Report</h3>
+                            <div class="flex items-center space-x-2">
+                                <button class="px-3 py-1.5 text-xs bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center space-x-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>PDF</span>
+                                </button>
+                                <button class="px-3 py-1.5 text-xs bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center space-x-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>Excel</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full">
+                                <thead class="bg-slate-900/50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Month</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Revenue</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Profit</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Transactions</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Avg Transaction</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-700/50">
+                                    @foreach (var data in monthlyData)
+                                    {
+                                        <tr class="hover:bg-slate-700/30 transition-colors">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-white">@data.Month</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">$@data.Revenue.ToString("N0")</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-emerald-400 font-medium">$@data.Profit.ToString("N0")</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@data.Transactions</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">$@data.AvgTransaction.ToString("F2")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (activeTab == 1)
+            {
+                <!-- Inventory Reports -->
+                <div class="text-center py-12">
+                    <div class="text-slate-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <h3 class="text-lg font-medium text-slate-400 mb-2">Inventory Reports</h3>
+                        <p class="text-sm">Inventory analysis and reports will be displayed here</p>
+                    </div>
+                </div>
+            }
+            else if (activeTab == 2)
+            {
+                <!-- Purchase Reports -->
+                <div class="text-center py-12">
+                    <div class="text-slate-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <h3 class="text-lg font-medium text-slate-400 mb-2">Purchase Reports</h3>
+                        <p class="text-sm">Purchase orders and supplier analysis will be displayed here</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private int activeTab = 0;
+
+    // Monthly data model
+    public class MonthlyData
+    {
+        public string Month { get; set; } = "";
+        public int Revenue { get; set; }
+        public int Profit { get; set; }
+        public int Transactions { get; set; }
+        public decimal AvgTransaction { get; set; }
+    }
+
+    // Category model
+    public class CategoryData
+    {
+        public string Name { get; set; } = "";
+        public decimal Percentage { get; set; }
+        public string Color { get; set; } = "";
+    }
+
+    // Sample data
+    private List<MonthlyData> monthlyData = new()
+    {
+        new MonthlyData { Month = "Jan", Revenue = 45000, Profit = 12000, Transactions = 850, AvgTransaction = 52.94m },
+        new MonthlyData { Month = "Feb", Revenue = 52000, Profit = 15000, Transactions = 920, AvgTransaction = 56.52m },
+        new MonthlyData { Month = "Mar", Revenue = 48000, Profit = 13500, Transactions = 890, AvgTransaction = 53.93m },
+        new MonthlyData { Month = "Apr", Revenue = 61000, Profit = 18000, Transactions = 1050, AvgTransaction = 58.10m },
+        new MonthlyData { Month = "May", Revenue = 55000, Profit = 14000, Transactions = 980, AvgTransaction = 56.12m },
+        new MonthlyData { Month = "Jun", Revenue = 67000, Profit = 20000, Transactions = 1150, AvgTransaction = 58.26m },
+    };
+
+    private List<CategoryData> categories = new()
+    {
+        new CategoryData { Name = "Antibiotics", Percentage = 25, Color = "#3b82f6" },
+        new CategoryData { Name = "Diabetes", Percentage = 22.5m, Color = "#8b5cf6" },
+        new CategoryData { Name = "Cardiac", Percentage = 17.5m, Color = "#ef4444" },
+        new CategoryData { Name = "Vitamins", Percentage = 15, Color = "#f59e0b" },
+        new CategoryData { Name = "Painkillers", Percentage = 20, Color = "#10b981" },
+    };
+}

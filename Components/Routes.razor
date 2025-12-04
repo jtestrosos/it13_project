@@ -1,0 +1,20 @@
+﻿<Router AppAssembly="@typeof(MauiProgram).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.DashboardLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="@typeof(Layout.DashboardLayout)">
+            <div class="flex items-center justify-center min-h-screen">
+                <div class="text-center">
+                    <h1 class="text-4xl font-bold text-gray-800 mb-4">404</h1>
+                    <p class="text-gray-600">Sorry, there's nothing at this address.</p>
+                    <a href="/" class="mt-4 inline-block px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+                        Go to Dashboard
+                    </a>
+                </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

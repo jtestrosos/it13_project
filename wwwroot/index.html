@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Medicine ERP Desktop</title>
+    <base href="/" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #app {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+        }
+
+            /* Loading indicator */
+            #app > div:first-child {
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div style="text-align: center;">
+            <svg class="inline-block animate-spin h-8 w-8 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="mt-4 text-gray-600">Loading PharmERP...</p>
+        </div>
+    </div>
+
+    <script src="_framework/blazor.webview.js" autostart="false"></script>
+</body>
+</html>
+```
+
+---
+
+## 📁 File Structure Check:
+
+Make sure you're editing the **correct files**:
+```
+Medicine_ERP_Desktop/
+├── App.xaml                  ← XML file
+├── App.xaml.cs               ← C# code (update this with C# code)
+├── MainPage.xaml             ← XML file (update this with XML code)
+├── MainPage.xaml.cs          ← C# code (leave as is)
+├── MauiProgram.cs            ← C# code
+├── Components/
+│   ├── Layout/
+│   │   └── DashboardLayout.razor
+│   └── Pages/
+│       └── Dashboard.razor
+└── wwwroot/
+    └── index.html            ← HTML file (update this)

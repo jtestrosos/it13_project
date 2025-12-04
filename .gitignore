@@ -1,0 +1,32 @@
+# Visual Studio / .NET - MOST IMPORTANT
+bin/
+obj/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# WebView2 cache - THIS IS WHAT BROKE YOUR GIT ADD
+Medicine_ERP_Desktop.exe.WebView2/
+EBWebView/
+
+# Build folders
+Debug/
+Release/
+x64/
+x86/
+
+# NuGet packages
+packages/
+*.nupkg
+
+# VS Code / Visual Studio hidden folders
+.vscode/
+.vs/
+
+# Other junk
+Thumbs.db
+Desktop.ini
+*.log
+*.tmp
+*.cache

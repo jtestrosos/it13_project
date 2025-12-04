@@ -1,0 +1,339 @@
+﻿@page "/sales"
+@layout DashboardLayout
+@inject HttpClient Http
+
+<PageTitle>Sales & Billing</PageTitle>
+
+<div class="h-full flex flex-col">
+    <!-- Header -->
+    <div class="flex-shrink-0 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-white">Sales & Billing (Point of Sale)</h1>
+                <p class="mt-1 text-sm text-slate-400">Process sales and generate receipts</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-2 px-4 py-2 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span class="text-white font-medium">Admin User</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex gap-6 overflow-hidden">
+        <!-- Left Side - Medicine Selection -->
+        <div class="flex-1 flex flex-col bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+            <!-- Search Bar -->
+            <div class="flex-shrink-0 p-6 border-b border-slate-700/50">
+                <h2 class="text-lg font-semibold text-white mb-4">Select Medicine</h2>
+                <div class="relative">
+                    <input type="text"
+                           @bind="searchQuery"
+                           @bind:event="oninput"
+                           placeholder="Search by name or scan barcode..."
+                           class="w-full px-4 py-3 pl-10 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <svg class="absolute left-3 top-3.5 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <button class="absolute right-3 top-2 px-3 py-1.5 bg-slate-700/50 hover:bg-slate-700 rounded-md transition-colors">
+                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Medicine List -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <div class="grid grid-cols-2 gap-4">
+                    @foreach (var medicine in FilteredMedicines)
+                    {
+                        <button @onclick="() => AddToCart(medicine)"
+                                class="group p-4 bg-slate-900/30 hover:bg-slate-700/30 border border-slate-700/50 hover:border-blue-500/50 rounded-lg transition-all duration-200 text-left">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-white group-hover:text-blue-400 transition-colors">@medicine.Name</h3>
+                                    <p class="text-xs text-slate-500 mt-1">Stock: @medicine.Stock</p>
+                                </div>
+                                <button class="w-6 h-6 flex items-center justify-center bg-blue-500/20 text-blue-400 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-700/30">
+                                <span class="text-lg font-bold text-emerald-400">$@medicine.Price.ToString("F2")</span>
+                            </div>
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Current Sale Cart -->
+        <div class="w-96 flex flex-col bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+            <!-- Cart Header -->
+            <div class="flex-shrink-0 p-6 border-b border-slate-700/50">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-white">Current Sale</h2>
+                    <button class="p-2 text-slate-400 hover:text-white transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cart Items -->
+            <div class="flex-1 overflow-y-auto p-4">
+                @if (cartItems.Count == 0)
+                {
+                    <div class="h-full flex items-center justify-center text-center">
+                        <div class="text-slate-500">
+                            <svg class="w-16 h-16 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <p class="text-sm">Cart is empty</p>
+                            <p class="text-xs mt-1">Select medicines to add</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="space-y-3">
+                        @foreach (var item in cartItems)
+                        {
+                            <div class="p-4 bg-slate-900/30 border border-slate-700/50 rounded-lg">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <h4 class="font-medium text-white">@item.Medicine.Name</h4>
+                                        <p class="text-sm text-slate-400">$@item.Medicine.Price.ToString("F2") each</p>
+                                    </div>
+                                    <button @onclick="() => RemoveFromCart(item.Medicine.Id)"
+                                            class="p-1 text-red-400 hover:text-red-300 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs text-slate-500">Qty</span>
+                                        <div class="flex items-center space-x-2 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                                            <button @onclick="() => DecreaseQuantity(item.Medicine.Id)"
+                                                    class="px-2 py-1 text-slate-400 hover:text-white transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                                </svg>
+                                            </button>
+                                            <span class="px-3 text-white font-medium">@item.Quantity</span>
+                                            <button @onclick="() => IncreaseQuantity(item.Medicine.Id)"
+                                                    class="px-2 py-1 text-slate-400 hover:text-white transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-right">
+                                        <div class="text-xs text-slate-500 mb-1">Disc %</div>
+                                        <input type="number"
+                                               @bind="item.DiscountPercent"
+                                               @bind:event="oninput"
+                                               min="0"
+                                               max="100"
+                                               class="w-16 px-2 py-1 text-center bg-slate-800/50 border border-slate-700/50 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 pt-3 border-t border-slate-700/30 flex items-center justify-end">
+                                    <span class="text-lg font-bold text-emerald-400">$@item.Total.ToString("F2")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Cart Summary -->
+            @if (cartItems.Count > 0)
+            {
+                <div class="flex-shrink-0 p-6 border-t border-slate-700/50 bg-slate-900/30 space-y-4">
+                    <!-- Summary -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-slate-400">Subtotal:</span>
+                            <span class="text-white font-medium">$@Subtotal.ToString("F2")</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-slate-400">Discount:</span>
+                            <span class="text-red-400 font-medium">-$@TotalDiscount.ToString("F2")</span>
+                        </div>
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-700/50">
+                            <span class="text-white font-semibold">Total:</span>
+                            <span class="text-2xl font-bold text-emerald-400">$@Total.ToString("F2")</span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-2">Payment Method</label>
+                        <select @bind="paymentMethod"
+                                class="w-full px-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Cash">💵 Cash</option>
+                            <option value="Card">💳 Card</option>
+                            <option value="UPI">📱 UPI</option>
+                        </select>
+                    </div>
+
+                    <!-- Amount Paid -->
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-2">Amount Paid</label>
+                        <input type="number"
+                               @bind="amountPaid"
+                               @bind:event="oninput"
+                               step="0.01"
+                               placeholder="0.00"
+                               class="w-full px-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        @if (amountPaid > Total)
+                        {
+                            <p class="mt-2 text-sm text-emerald-400">Change: $@((amountPaid - Total).ToString("F2"))</p>
+                        }
+                    </div>
+
+                    <!-- Complete Sale Button -->
+                    <button @onclick="CompleteSale"
+                            disabled="@(amountPaid < Total)"
+                            class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Complete Sale</span>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    // Medicine model
+    public class Medicine
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public decimal Price { get; set; }
+        public int Stock { get; set; }
+    }
+
+    // Cart item model
+    public class CartItem
+    {
+        public Medicine Medicine { get; set; } = new();
+        public int Quantity { get; set; } = 1;
+        public decimal DiscountPercent { get; set; } = 0;
+
+        public decimal Subtotal => Medicine.Price * Quantity;
+        public decimal DiscountAmount => Subtotal * (DiscountPercent / 100);
+        public decimal Total => Subtotal - DiscountAmount;
+    }
+
+    // Sample medicines
+    private List<Medicine> medicines = new()
+    {
+        new Medicine { Id = 1, Name = "Amoxicillin 500mg", Price = 12.50m, Stock = 450 },
+        new Medicine { Id = 2, Name = "Paracetamol 650mg", Price = 5.00m, Stock = 780 },
+        new Medicine { Id = 3, Name = "Ibuprofen 400mg", Price = 8.75m, Stock = 320 },
+        new Medicine { Id = 4, Name = "Metformin 500mg", Price = 15.00m, Stock = 620 },
+        new Medicine { Id = 5, Name = "Atorvastatin 20mg", Price = 22.50m, Stock = 340 },
+        new Medicine { Id = 6, Name = "Aspirin 75mg", Price = 4.25m, Stock = 890 },
+        new Medicine { Id = 7, Name = "Omeprazole 20mg", Price = 18.00m, Stock = 450 },
+        new Medicine { Id = 8, Name = "Losartan 50mg", Price = 16.50m, Stock = 280 },
+    };
+
+    private List<CartItem> cartItems = new();
+    private string searchQuery = "";
+    private string paymentMethod = "Cash";
+    private decimal amountPaid = 0;
+
+    private List<Medicine> FilteredMedicines =>
+        string.IsNullOrWhiteSpace(searchQuery)
+            ? medicines
+            : medicines.Where(m => m.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private decimal Subtotal => cartItems.Sum(item => item.Subtotal);
+    private decimal TotalDiscount => cartItems.Sum(item => item.DiscountAmount);
+    private decimal Total => cartItems.Sum(item => item.Total);
+
+    private void AddToCart(Medicine medicine)
+    {
+        var existingItem = cartItems.FirstOrDefault(item => item.Medicine.Id == medicine.Id);
+
+        if (existingItem != null)
+        {
+            existingItem.Quantity++;
+        }
+        else
+        {
+            cartItems.Add(new CartItem { Medicine = medicine, Quantity = 1 });
+        }
+    }
+
+    private void RemoveFromCart(int medicineId)
+    {
+        var item = cartItems.FirstOrDefault(i => i.Medicine.Id == medicineId);
+        if (item != null)
+        {
+            cartItems.Remove(item);
+        }
+    }
+
+    private void IncreaseQuantity(int medicineId)
+    {
+        var item = cartItems.FirstOrDefault(i => i.Medicine.Id == medicineId);
+        if (item != null && item.Quantity < item.Medicine.Stock)
+        {
+            item.Quantity++;
+        }
+    }
+
+    private void DecreaseQuantity(int medicineId)
+    {
+        var item = cartItems.FirstOrDefault(i => i.Medicine.Id == medicineId);
+        if (item != null)
+        {
+            if (item.Quantity > 1)
+            {
+                item.Quantity--;
+            }
+            else
+            {
+                cartItems.Remove(item);
+            }
+        }
+    }
+
+    private void CompleteSale()
+    {
+        if (amountPaid >= Total)
+        {
+            // Here you would:
+            // 1. Save sale to database
+            // 2. Update inventory
+            // 3. Generate receipt
+            // 4. Clear cart
+
+            cartItems.Clear();
+            amountPaid = 0;
+
+            // Show success notification (you can add a toast notification component later)
+            // For now, just reset the form
+        }
+    }
+}

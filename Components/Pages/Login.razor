@@ -1,0 +1,108 @@
+﻿@page "/login"
+@using Medicine_ERP.Data.Models.ViewModels
+@layout AuthLayout
+
+<div class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-12">
+    <div class="w-full max-w-md">
+        <!-- Logo and Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-500 rounded-2xl mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Medicine ERP System</h1>
+            <p class="text-gray-600 dark:text-gray-400 text-sm">Sign in to your pharmacy management account</p>
+        </div>
+
+        <!-- Login Form Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+            <EditForm Model="AuthLogin" OnSubmit="HandleSubmit" FormName="LoginForm">
+                <!-- Email Address Field -->
+                <div class="mb-5">
+                    <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Email Address
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                            </svg>
+                        </div>
+                        <InputText @bind-Value="AuthLogin!.Username"
+                                   id="email"
+                                   placeholder="admin@pharmacy.com"
+                                   class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors" />
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-5">
+                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
+                        <InputText @bind-Value="AuthLogin!.Password"
+                                   type="password"
+                                   id="password"
+                                   placeholder="Enter your password"
+                                   class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors" />
+                    </div>
+                </div>
+
+                <!-- Remember Me and Forgot Password -->
+                <div class="flex items-center justify-between mb-6">
+                    <label class="flex items-center">
+                        <input type="checkbox" class="w-4 h-4 text-emerald-500 border-gray-300 dark:border-gray-600 rounded focus:ring-emerald-500 dark:bg-gray-700">
+                        <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
+                    </label>
+                    <a href="/forgot-password" class="text-sm font-medium text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit"
+                        class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                    Sign In
+                </button>
+            </EditForm>
+        </div>
+
+        <!-- Footer Text -->
+        <p class="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
+            Need help? <a href="/support" class="font-medium text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors">Contact Support</a>
+        </p>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private LoginModel? AuthLogin { get; set; }
+
+    protected override void OnInitialized()
+    {
+        AuthLogin ??= new LoginModel();
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (AuthLogin != null)
+        {
+            Console.WriteLine($"Attempting login for: {AuthLogin.Username}");
+
+            // TODO: Add your authentication logic here
+            // Example:
+            // var result = await AuthService.LoginAsync(AuthLogin.Username, AuthLogin.Password);
+            // if (result.Success)
+            // {
+            //     NavigationManager.NavigateTo("/dashboard");
+            // }
+        }
+    }
+}
