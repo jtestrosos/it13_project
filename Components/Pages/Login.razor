@@ -1,108 +1,143 @@
-﻿@page "/login"
-@using Medicine_ERP.Data.Models.ViewModels
+﻿@page "/"
+@page "/login"
 @layout AuthLayout
-
-<div class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-12">
-    <div class="w-full max-w-md">
-        <!-- Logo and Header -->
+@using PharmacyManagementSystem.Services
+@using Microsoft.AspNetCore.Components
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+<PageTitle>Login - Medicine ERP System</PageTitle>
+<div class="h-screen w-screen flex items-center justify-center bg-slate-900 px-4 py-0">
+    <div class="w-full max-w-sm">
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-500 rounded-2xl mb-4">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            <!-- LOGO – 100% IDENTICAL TO SIDEBAR (same color, size ratio, icon) -->
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-500 rounded-2xl shadow-xl shadow-emerald-500/30 mb-4">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                 </svg>
             </div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Medicine ERP System</h1>
-            <p class="text-gray-600 dark:text-gray-400 text-sm">Sign in to your pharmacy management account</p>
+            <h1 class="text-2xl font-bold text-white mb-1">Medicine ERP System</h1>
+            <p class="text-slate-400 text-base">Sign in to your pharmacy management account</p>
         </div>
-
-        <!-- Login Form Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
-            <EditForm Model="AuthLogin" OnSubmit="HandleSubmit" FormName="LoginForm">
-                <!-- Email Address Field -->
+        <div class="bg-slate-800 rounded-2xl shadow-2xl p-8 w-full">
+            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
                 <div class="mb-5">
-                    <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Email Address
-                    </label>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
                         </div>
-                        <InputText @bind-Value="AuthLogin!.Username"
-                                   id="email"
-                                   placeholder="admin@pharmacy.com"
-                                   class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors" />
+                        <InputText @bind-Value="loginModel.Email"
+                                   placeholder="Enter your email"
+                                   class="w-full pl-10 pr-3 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" />
                     </div>
                 </div>
-
-                <!-- Password Field -->
-                <div class="mb-5">
-                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Password
-                    </label>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Password</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 11c0-2.209-1.791-4-4-4s-4 1.791-4 4 1.791 4 4 4m4-4c0-2.209 1.791-4 4-4s4 1.791 4 4-1.791 4-4 4m-4-4v6" />
                             </svg>
                         </div>
-                        <InputText @bind-Value="AuthLogin!.Password"
+                        <InputText @bind-Value="loginModel.Password"
                                    type="password"
-                                   id="password"
                                    placeholder="Enter your password"
-                                   class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors" />
+                                   class="w-full pl-10 pr-3 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" />
                     </div>
                 </div>
-
-                <!-- Remember Me and Forgot Password -->
-                <div class="flex items-center justify-between mb-6">
-                    <label class="flex items-center">
-                        <input type="checkbox" class="w-4 h-4 text-emerald-500 border-gray-300 dark:border-gray-600 rounded focus:ring-emerald-500 dark:bg-gray-700">
-                        <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
+                <div class="flex items-center mb-6">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" @bind="loginModel.RememberMe"
+                               class="w-4 h-4 text-emerald-500 bg-slate-700 border-slate-600 rounded focus:ring-emerald-500" />
+                        <span class="ml-2 text-sm text-slate-300">Remember me</span>
                     </label>
-                    <a href="/forgot-password" class="text-sm font-medium text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors">
-                        Forgot password?
-                    </a>
                 </div>
-
-                <!-- Submit Button -->
                 <button type="submit"
-                        class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
-                    Sign In
+                        disabled="@isLoading"
+                        class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-700 text-white font-bold text-lg rounded-xl transition-all duration-200 shadow-lg shadow-emerald-500/30 flex items-center justify-center space-x-3">
+                    @if (isLoading)
+                    {
+                        <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
+                            <path class="opacity-75" d="M4 12a8 8 0 018-8v8z"></path>
+                        </svg>
+                        <span>Signing in...</span>
+                    }
+                    else
+                    {
+                        <span>Sign In</span>
+                    }
                 </button>
             </EditForm>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-center text-sm font-medium">
+                    @errorMessage
+                </div>
+            }
         </div>
-
-        <!-- Footer Text -->
-        <p class="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
-            Need help? <a href="/support" class="font-medium text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors">Contact Support</a>
-        </p>
     </div>
 </div>
-
 @code {
-    [SupplyParameterFromForm]
-    private LoginModel? AuthLogin { get; set; }
-
-    protected override void OnInitialized()
+    [Inject]
+    public IAuthService AuthService { get; set; } = default!;
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+    private string? errorMessage;
+    protected override async Task OnInitializedAsync()
     {
-        AuthLogin ??= new LoginModel();
-    }
-
-    private async Task HandleSubmit()
-    {
-        if (AuthLogin != null)
+        var loggedIn = await JS.InvokeAsync<string>("localStorage.getItem", "isLoggedIn");
+        if (loggedIn == "true")
         {
-            Console.WriteLine($"Attempting login for: {AuthLogin.Username}");
-
-            // TODO: Add your authentication logic here
-            // Example:
-            // var result = await AuthService.LoginAsync(AuthLogin.Username, AuthLogin.Password);
-            // if (result.Success)
-            // {
-            //     NavigationManager.NavigateTo("/dashboard");
-            // }
+            await JS.InvokeVoidAsync("localStorage.removeItem", "isLoggedIn");
         }
+    }
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+        try
+        {
+            var result = await AuthService.LoginAsync(loginModel.Email, loginModel.Password, loginModel.RememberMe);
+            if (result.Success)
+            {
+                var userRole = result.ErrorMessage ?? "Staff";
+                await JS.InvokeVoidAsync("localStorage.setItem", "isLoggedIn", "true");
+                await JS.InvokeVoidAsync("localStorage.setItem", "userRole", userRole);
+                await JS.InvokeVoidAsync("localStorage.setItem", "userEmail", loginModel.Email);
+                Navigation.NavigateTo("/dashboard", forceLoad: true);
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login Error: {ex.Message}");
+            errorMessage = "A server connection error occurred. Please check network/credentials.";
+        }
+        isLoading = false;
+        StateHasChanged();
+    }
+    public static async Task Logout(IJSRuntime js, NavigationManager nav)
+    {
+        await js.InvokeVoidAsync("localStorage.removeItem", "isLoggedIn");
+        await js.InvokeVoidAsync("localStorage.removeItem", "userRole");
+        await js.InvokeVoidAsync("localStorage.removeItem", "userEmail");
+        nav.NavigateTo("/login", forceLoad: true);
+    }
+    public class LoginModel
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public bool RememberMe { get; set; } = false;
     }
 }

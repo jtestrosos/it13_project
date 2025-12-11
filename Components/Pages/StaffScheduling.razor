@@ -1,27 +1,23 @@
 ﻿@page "/staff"
 @layout DashboardLayout
-@inject HttpClient Http
+@using PharmacyManagementSystem.Services
 
-<PageTitle>Staff Scheduling</PageTitle>
+<PageTitle>Staff Scheduling - PharmERP</PageTitle>
 
-<div class="space-y-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
+<div class="h-full flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+    <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-3xl font-bold text-white">Staff Scheduling</h1>
             <p class="mt-1 text-sm text-slate-400">Manage staff members and their schedules</p>
         </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-3 gap-6">
-        <!-- Total Staff -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-slate-400 mb-1">Total Staff</p>
                     <h3 class="text-3xl font-bold text-white">@staffMembers.Count</h3>
-                    <p class="text-xs text-slate-500 mt-1">Active members</p>
                 </div>
                 <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
                     <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -30,14 +26,11 @@
                 </div>
             </div>
         </div>
-
-        <!-- Today's Shifts -->
         <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-slate-400 mb-1">Today's Shifts</p>
-                    <h3 class="text-3xl font-bold text-white">@GetTodayShiftsCount()</h3>
-                    <p class="text-xs text-slate-500 mt-1">Scheduled shifts</p>
+                    <h3 class="text-3xl font-bold text-white">@shifts.Count(s => s.Date.Date == DateTime.Today)</h3>
                 </div>
                 <div class="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
                     <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,14 +39,11 @@
                 </div>
             </div>
         </div>
-
-        <!-- This Week -->
         <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-slate-400 mb-1">This Week</p>
-                    <h3 class="text-3xl font-bold text-white">@GetWeekShiftsCount()</h3>
-                    <p class="text-xs text-slate-500 mt-1">Total shifts</p>
+                    <h3 class="text-3xl font-bold text-white">@shifts.Count</h3>
                 </div>
                 <div class="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
                     <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,14 +54,12 @@
         </div>
     </div>
 
-    <!-- Main Content Grid -->
-    <div class="grid grid-cols-2 gap-6">
-        <!-- Left Side - Staff Members -->
-        <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
-            <!-- Header -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
+        <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 flex flex-col">
             <div class="p-6 border-b border-slate-700/50 flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-white">Staff Members</h2>
-                <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2">
+                <button @onclick="OpenAddStaffModal"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
@@ -79,52 +67,59 @@
                 </button>
             </div>
 
-            <!-- Staff Table -->
-            <div class="overflow-auto max-h-[600px]">
-                <table class="min-w-full">
-                    <thead class="bg-slate-900/50 sticky top-0">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Name</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Role</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-700/50">
-                        @foreach (var staff in staffMembers)
-                        {
-                            <tr class="hover:bg-slate-700/30 transition-colors">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                                            @GetInitials(staff.Name)
-                                        </div>
-                                        <div>
-                                            <div class="text-sm font-medium text-white">@staff.Name</div>
-                                            <div class="text-xs text-slate-500">@staff.Email</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm text-slate-300">@staff.Role</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-3 py-1 text-xs font-medium rounded-full @GetStatusClass(staff.Status)">
-                                        @staff.Status
-                                    </span>
-                                </td>
+            @if (isLoading)
+            {
+                <div class="flex-1 flex items-center justify-center text-center text-blue-400 p-10">Loading Staff Data...</div>
+            }
+            else if (!staffMembers.Any())
+            {
+                <div class="flex-1 flex items-center justify-center text-center text-slate-500 p-10">
+                    <div>
+                        <svg class="w-20 h-20 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <p class="text-lg">No staff members yet</p>
+                        <p class="text-sm mt-2">Click "Add Staff" to get started</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="overflow-y-auto">
+                    <table class="min-w-full divide-y divide-slate-700">
+                        <thead class="bg-slate-700/50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Role</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody class="bg-slate-800/30 divide-y divide-slate-700">
+                            @foreach (var member in staffMembers.OrderBy(s => s.Name))
+                            {
+                                <tr class="hover:bg-slate-700/50 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">@member.Name</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@member.Role</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@member.Email</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full @(member.Status == "active" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800")">
+                                            @member.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
 
-        <!-- Right Side - Weekly Schedule -->
-        <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
-            <!-- Header -->
+        <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 flex flex-col">
             <div class="p-6 border-b border-slate-700/50 flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-white">Weekly Schedule</h2>
-                <button class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2">
+                <button @onclick="OpenAddShiftModal"
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium flex items-center space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
@@ -132,158 +127,298 @@
                 </button>
             </div>
 
-            <!-- Weekly Calendar -->
-            <div class="p-6 space-y-4 overflow-auto max-h-[600px]">
-                @foreach (var day in weekDays)
-                {
-                    <div class="bg-slate-900/30 border border-slate-700/50 rounded-lg p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <div>
-                                <h3 class="text-sm font-semibold text-white">@day.Name</h3>
-                                <p class="text-xs text-slate-500">@day.Date</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-slate-400">@GetDayShiftsCount(day) shifts</p>
-                            </div>
-                        </div>
-
-                        @if (GetDayShifts(day).Count == 0)
-                        {
-                            <div class="text-center py-4 text-slate-500 text-sm">
-                                No shifts scheduled
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="space-y-2">
-                                @foreach (var shift in GetDayShifts(day))
-                                {
-                                    <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                                @GetInitials(shift.StaffName)
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-medium text-white">@shift.StaffName</p>
-                                                <p class="text-xs text-slate-500">@shift.Role</p>
-                                            </div>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="text-sm font-medium text-blue-400">@shift.StartTime - @shift.EndTime</p>
-                                            <p class="text-xs text-slate-500">@shift.Duration hours</p>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
+            @if (isLoading)
+            {
+                <div class="flex-1 flex items-center justify-center text-center text-blue-400 p-10">Loading Shifts...</div>
+            }
+            else if (!shifts.Any())
+            {
+                <div class="flex-1 flex items-center justify-center text-center text-slate-500 p-10">
+                    <div>
+                        <svg class="w-20 h-20 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p class="text-lg">No shifts scheduled</p>
                     </div>
-                }
-            </div>
+                </div>
+            }
+            else
+            {
+                <div class="overflow-y-auto">
+                    <table class="min-w-full divide-y divide-slate-700">
+                        <thead class="bg-slate-700/50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Staff</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Role</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-slate-800/30 divide-y divide-slate-700">
+                            @foreach (var shift in shifts.OrderByDescending(s => s.Date).ThenBy(s => s.StartTime))
+                            {
+                                <tr class="hover:bg-slate-700/50 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-white">@shift.Date.ToShortDateString()</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@shift.StaffName</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@shift.Role</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@shift.StartTime.ToString(@"hh\:mm") - @shift.EndTime.ToString(@"hh\:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
 </div>
 
+@if (showAddStaffModal)
+{
+    <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800/90 backdrop-blur-xl rounded-2xl border border-slate-700 shadow-2xl w-full max-w-md">
+            <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Add Staff Member</h2>
+                    <p class="text-slate-400 text-sm mt-1">Enter staff member information</p>
+                </div>
+                <button @onclick="() => showAddStaffModal = false" class="text-slate-400 hover:text-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+                    <input @bind="newStaff.Name" placeholder="e.g. John Doe"
+                           class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                    <input @bind="newStaff.Email" type="email" placeholder="john@pharmacy.com"
+                           class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Role</label>
+                    <select @bind="newStaff.Role"
+                            class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Select role</option>
+                        <option>Pharmacist</option>
+                        <option>Pharmacy Technician</option>
+                        <option>Sales Associate</option>
+                        <option>Manager</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Phone</label>
+                    <input @bind="newStaff.Phone" placeholder="+1-555-0000"
+                           class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 px-6 pb-6">
+                <button @onclick="() => showAddStaffModal = false"
+                        class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition">
+                    Cancel
+                </button>
+                <button @onclick="SaveStaff"
+                        class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg shadow-blue-600/30">
+                    Add Staff
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showAddShiftModal)
+{
+    <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800/90 backdrop-blur-xl rounded-2xl border border-slate-700 shadow-2xl w-full max-w-md">
+            <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Schedule Shift</h2>
+                    <p class="text-slate-400 text-sm mt-1">Create a new staff shift</p>
+                </div>
+                <button @onclick="() => showAddShiftModal = false" class="text-slate-400 hover:text-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Staff Member</label>
+                    <select @bind="newShift.StaffId"
+                            class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="0">Select staff member</option>
+                        @foreach (var s in staffMembers)
+                        {
+                            <option value="@s.StaffId">@s.Name - @s.Role</option>
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Date</label>
+                    <input value="@newShift.DateString" @onchange="@((ChangeEventArgs e) => newShift.DateString = e.Value?.ToString() ?? "")"
+                           type="date"
+                           class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Start Time</label>
+                        <input value="@newShift.StartTimeString" @onchange="@((ChangeEventArgs e) => newShift.StartTimeString = e.Value?.ToString() ?? "")"
+                               type="time" placeholder="09:00"
+                               class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">End Time</label>
+                        <input value="@newShift.EndTimeString" @onchange="@((ChangeEventArgs e) => newShift.EndTimeString = e.Value?.ToString() ?? "")"
+                               type="time" placeholder="17:00"
+                               class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 px-6 pb-6">
+                <button @onclick="() => showAddShiftModal = false"
+                        class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition">
+                    Cancel
+                </button>
+                <button @onclick="SaveShift"
+                        class="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium shadow-lg shadow-emerald-600/30">
+                    Schedule Shift
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
-    // Staff Member Model
-    public class StaffMember
+    [Inject]
+    public IStaffService StaffService { get; set; } = default!;
+    [Inject]
+    public IJSRuntime JS { get; set; } = default!;
+
+    private bool isLoading = true;
+    private bool showAddStaffModal = false;
+    private bool showAddShiftModal = false;
+
+    private List<PharmacyManagementSystem.Services.Staff> staffMembers = new();
+    private List<PharmacyManagementSystem.Services.Shift> shifts = new();
+
+    private PharmacyManagementSystem.Services.Staff newStaff = new();
+    private PharmacyManagementSystem.Services.Shift newShift = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        public int Id { get; set; }
-        public string Name { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Role { get; set; } = "";
-        public string Status { get; set; } = "active";
+        await LoadData();
     }
 
-    // Shift Model
-    public class Shift
+    private async Task LoadData()
     {
-        public int Id { get; set; }
-        public int StaffId { get; set; }
-        public string StaffName { get; set; } = "";
-        public string Role { get; set; } = "";
-        public string Day { get; set; } = "";
-        public string StartTime { get; set; } = "";
-        public string EndTime { get; set; } = "";
-        public int Duration { get; set; }
-    }
-
-    // Week Day Model
-    public class WeekDay
-    {
-        public string Name { get; set; } = "";
-        public string Date { get; set; } = "";
-        public string ShortName { get; set; } = "";
-    }
-
-    // Sample data
-    private List<StaffMember> staffMembers = new()
-    {
-        new StaffMember { Id = 1, Name = "John Doe", Email = "john@pharmacy.com", Role = "Pharmacist", Status = "active" },
-        new StaffMember { Id = 2, Name = "Jane Smith", Email = "jane@pharmacy.com", Role = "Pharmacy Technician", Status = "active" },
-        new StaffMember { Id = 3, Name = "Mike Johnson", Email = "mike@pharmacy.com", Role = "Sales Associate", Status = "active" },
-        new StaffMember { Id = 4, Name = "Sarah Williams", Email = "sarah@pharmacy.com", Role = "Pharmacist", Status = "active" },
-    };
-
-    private List<Shift> shifts = new()
-    {
-        new Shift { Id = 1, StaffId = 1, StaffName = "John Doe", Role = "Pharmacist", Day = "Thu", StartTime = "09:00", EndTime = "17:00", Duration = 8 },
-        new Shift { Id = 2, StaffId = 2, StaffName = "Jane Smith", Role = "Technician", Day = "Thu", StartTime = "10:00", EndTime = "18:00", Duration = 8 },
-        new Shift { Id = 3, StaffId = 1, StaffName = "John Doe", Role = "Pharmacist", Day = "Fri", StartTime = "09:00", EndTime = "17:00", Duration = 8 },
-        new Shift { Id = 4, StaffId = 3, StaffName = "Mike Johnson", Role = "Sales Associate", Day = "Fri", StartTime = "12:00", EndTime = "20:00", Duration = 8 },
-        new Shift { Id = 5, StaffId = 4, StaffName = "Sarah Williams", Role = "Pharmacist", Day = "Sat", StartTime = "08:00", EndTime = "16:00", Duration = 8 },
-        new Shift { Id = 6, StaffId = 2, StaffName = "Jane Smith", Role = "Technician", Day = "Sat", StartTime = "10:00", EndTime = "18:00", Duration = 8 },
-    };
-
-    private List<WeekDay> weekDays = new()
-    {
-        new WeekDay { Name = "Thu", Date = "Dec 5", ShortName = "Thu" },
-        new WeekDay { Name = "Fri", Date = "Dec 6", ShortName = "Fri" },
-        new WeekDay { Name = "Sat", Date = "Dec 7", ShortName = "Sat" },
-        new WeekDay { Name = "Sun", Date = "Dec 8", ShortName = "Sun" },
-        new WeekDay { Name = "Mon", Date = "Dec 9", ShortName = "Mon" },
-        new WeekDay { Name = "Tue", Date = "Dec 10", ShortName = "Tue" },
-        new WeekDay { Name = "Wed", Date = "Dec 11", ShortName = "Wed" },
-    };
-
-    private string GetInitials(string name)
-    {
-        var parts = name.Split(' ');
-        if (parts.Length >= 2)
+        isLoading = true;
+        try
         {
-            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+            staffMembers = await StaffService.GetAllStaffAsync();
+            shifts = await StaffService.GetAllShiftsAsync();
         }
-        return name.Length >= 2 ? name.Substring(0, 2).ToUpper() : name.ToUpper();
-    }
-
-    private string GetStatusClass(string status)
-    {
-        return status.ToLower() switch
+        catch (Exception ex)
         {
-            "active" => "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
-            "inactive" => "bg-slate-500/20 text-slate-300 border border-slate-500/30",
-            "on leave" => "bg-amber-500/20 text-amber-300 border border-amber-500/30",
-            _ => "bg-slate-500/20 text-slate-300 border border-slate-500/30"
+            Console.WriteLine($"Error loading staff data: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Error loading staff data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OpenAddStaffModal()
+    {
+        newStaff = new PharmacyManagementSystem.Services.Staff();
+        showAddStaffModal = true;
+    }
+
+    private async Task SaveStaff()
+    {
+        if (string.IsNullOrWhiteSpace(newStaff.Name) || string.IsNullOrWhiteSpace(newStaff.Role))
+        {
+            await JS.InvokeVoidAsync("alert", "Please enter a name and select a role.");
+            return;
+        }
+
+        try
+        {
+            await StaffService.AddStaffAsync(newStaff);
+            await JS.InvokeVoidAsync("alert", $"Staff '{newStaff.Name}' added successfully!");
+            showAddStaffModal = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error saving staff: {ex.Message}");
+        }
+    }
+
+    private void OpenAddShiftModal()
+    {
+        // Initialize newShift with default values and string properties for binding
+        newShift = new PharmacyManagementSystem.Services.Shift
+        {
+            Date = DateTime.Today,
+            DateString = DateTime.Today.ToString("yyyy-MM-dd"),
+            StartTimeString = "09:00",
+            EndTimeString = "17:00"
         };
+        showAddShiftModal = true;
     }
 
-    private int GetTodayShiftsCount()
+    private async Task SaveShift()
     {
-        // Assuming today is Thursday (first day in the week)
-        return GetDayShifts(weekDays[0]).Count;
-    }
+        // 1. Convert string inputs from HTML to TimeSpan and DateTime
 
-    private int GetWeekShiftsCount()
-    {
-        return shifts.Count;
-    }
+        // Parse Date String
+        if (!DateTime.TryParse(newShift.DateString, out var shiftDate))
+        {
+            await JS.InvokeVoidAsync("alert", "Invalid date format.");
+            return;
+        }
 
-    private int GetDayShiftsCount(WeekDay day)
-    {
-        return shifts.Count(s => s.Day == day.ShortName);
-    }
+        // Parse Time Strings
+        if (!TimeSpan.TryParse(newShift.StartTimeString, out var startTime) ||
+            !TimeSpan.TryParse(newShift.EndTimeString, out var endTime))
+        {
+            await JS.InvokeVoidAsync("alert", "Invalid time format (use HH:MM).");
+            return;
+        }
 
-    private List<Shift> GetDayShifts(WeekDay day)
-    {
-        return shifts.Where(s => s.Day == day.ShortName).ToList();
+        // Apply parsed values to the final model fields
+        newShift.Date = shiftDate.Date;
+        newShift.StartTime = startTime;
+        newShift.EndTime = endTime;
+
+        // 2. Validation check
+        if (newShift.StaffId == 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Please select a staff member.");
+            return;
+        }
+
+        try
+        {
+            await StaffService.AddShiftAsync(newShift);
+            await JS.InvokeVoidAsync("alert", "Shift scheduled successfully!");
+            showAddShiftModal = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error scheduling shift: {ex.Message}");
+        }
     }
 }

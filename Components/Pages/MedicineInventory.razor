@@ -1,16 +1,22 @@
 ﻿@page "/inventory"
-@inject HttpClient Http
+@layout DashboardLayout
+
+@using PharmacyManagementSystem.Services
+@using System.Text
+@using System.Linq
+@using System;
+
 
 <PageTitle>Medicine Inventory - PharmERP</PageTitle>
 
 <div class="h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-    <!-- Header Section -->
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold text-white">Medicine Inventory</h1>
             <p class="text-slate-400 mt-1">Manage your pharmacy stock and inventory</p>
         </div>
-        <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2 transition-colors">
+        <button @onclick="() => OpenModal(null)"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -18,35 +24,35 @@
         </button>
     </div>
 
-    <!-- Medicine List Card -->
     <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
-        <!-- Card Header with Search and Filters -->
         <div class="p-6 border-b border-slate-700/50">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-white">Medicine List</h2>
                 <div class="flex items-center space-x-3">
-                    <!-- Search -->
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </span>
-                        <input type="search"
+                        <input type="search" @bind="SearchTerm" @bind:event="oninput"
                                placeholder="Search medicines..."
-                               class="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64">
+                               class="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
                     </div>
 
-                    <!-- Category Filter -->
-                    <button class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg flex items-center space-x-2 border border-slate-600 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                        <span>All Categories</span>
-                    </button>
+                    @* CATEGORY DROPDOWN FILTER *@
+                    <select @bind="SelectedCategory"
+                            class="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Categories</option>
+                        @foreach (var category in UniqueCategories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
 
-                    <!-- Export Button -->
-                    <button class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg flex items-center space-x-2 border border-slate-600 transition-colors">
+                    @* EXPORT BUTTON *@
+                    <button @onclick="ExportData"
+                            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg flex items-center space-x-2 border border-slate-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
@@ -56,300 +62,359 @@
             </div>
         </div>
 
-        <!-- Table -->
         <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-slate-700/30">
+            <table class="min-w-full divide-y divide-slate-700">
+                <thead class="bg-slate-700/50">
                     <tr>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Medicine Name</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Generic Name</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Category</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Quantity</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Price</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Expiry Date</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Batch</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">Actions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Generic</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Qty</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Price</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Expiry</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Supplier</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-700/30">
-                    <!-- Row 1 - In Stock -->
-                    <tr class="hover:bg-slate-700/20 transition-colors">
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">Amoxicillin 500mg</div>
-                            <div class="text-xs text-slate-400">Lot: A-12</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-300">Amoxicillin</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-medium bg-blue-500/20 text-blue-300 rounded">Antibiotics</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">450</div>
-                            <div class="text-xs text-slate-400">Min: 100</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm font-medium text-white">$12.50</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">2026-08-15</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">BT-2024-001</td>
-                        <td class="px-6 py-4">
-                            <span class="px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-300 rounded-full">In Stock</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-3">
-                                <button class="text-blue-400 hover:text-blue-300" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                                <button class="text-red-400 hover:text-red-300" title="Delete">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                <tbody class="bg-slate-800/30 divide-y divide-slate-700">
+                    @if (FilteredMedicines != null)
+                    {
+                        @foreach (var medicine in FilteredMedicines)
+                        {
+                            var status = GetMedicineStatus(medicine);
+                            var statusClasses = GetStatusClasses(status);
+                            var rowClass = status == "No Stock" || status == "Expiring Soon" ? "bg-red-900/10 hover:bg-red-900/30" : (status == "Low Stock" ? "bg-amber-900/10 hover:bg-amber-900/30" : "hover:bg-slate-700/50");
 
-                    <!-- Row 2 - Expiring Soon (ORANGE) -->
-                    <tr class="hover:bg-slate-700/20 transition-colors">
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">Paracetamol 650mg</div>
-                            <div class="text-xs text-slate-400">Lot: B-09</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-300">Paracetamol</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-medium bg-purple-500/20 text-purple-300 rounded">Painkillers</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">780</div>
-                            <div class="text-xs text-slate-400">Min: 200</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm font-medium text-white">$5.00</td>
-                        <td class="px-6 py-4 text-sm text-amber-400 font-medium">2025-12-15</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">BT-2024-045</td>
-                        <td class="px-6 py-4">
-                            <span class="px-3 py-1 text-xs font-medium bg-amber-500/20 text-amber-300 rounded-full">Expiring Soon</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-3">
-                                <button class="text-blue-400 hover:text-blue-300" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                                <button class="text-red-400 hover:text-red-300" title="Delete">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                            <tr class="@rowClass">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">@medicine.Name</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@medicine.GenericName</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@medicine.Category</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm @(status != "In Stock" ? "font-bold" : "text-slate-300")">@medicine.Quantity</td>
 
-                    <!-- Row 3 - Low Stock (ORANGE) -->
-                    <tr class="hover:bg-slate-700/20 transition-colors">
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">Ibuprofen 400mg</div>
-                            <div class="text-xs text-slate-400">Lot: B-08</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-300">Ibuprofen</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-medium bg-purple-500/20 text-purple-300 rounded">Painkillers</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-amber-400">8</div>
-                            <div class="text-xs text-slate-400">Min: 150</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm font-medium text-white">$8.75</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">2026-05-20</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">BT-2024-089</td>
-                        <td class="px-6 py-4">
-                            <span class="px-3 py-1 text-xs font-medium bg-amber-500/20 text-amber-300 rounded-full">Low Stock</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-3">
-                                <button class="text-blue-400 hover:text-blue-300" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                                <button class="text-red-400 hover:text-red-300" title="Delete">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span class="@statusClasses">
+                                        @status
+                                    </span>
+                                </td>
 
-                    <!-- Row 4 - In Stock -->
-                    <tr class="hover:bg-slate-700/20 transition-colors">
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">Metformin 500mg</div>
-                            <div class="text-xs text-slate-400">Lot: C-18</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-300">Metformin</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-medium bg-teal-500/20 text-teal-300 rounded">Diabetes</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">620</div>
-                            <div class="text-xs text-slate-400">Min: 120</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm font-medium text-white">$15.00</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">2026-11-30</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">BT-2024-112</td>
-                        <td class="px-6 py-4">
-                            <span class="px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-300 rounded-full">In Stock</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-3">
-                                <button class="text-blue-400 hover:text-blue-300" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                                <button class="text-red-400 hover:text-red-300" title="Delete">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">$@medicine.Price.ToString("F2")</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@medicine.ExpiryDate.ToShortDateString()</td>
 
-                    <!-- Row 5 - In Stock -->
-                    <tr class="hover:bg-slate-700/20 transition-colors">
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">Atorvastatin 20mg</div>
-                            <div class="text-xs text-slate-400">Lot: D-22</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-300">Atorvastatin</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-medium bg-rose-500/20 text-rose-300 rounded">Cardiac</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">340</div>
-                            <div class="text-xs text-slate-400">Min: 80</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm font-medium text-white">$22.50</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">2026-03-10</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">BT-2024-156</td>
-                        <td class="px-6 py-4">
-                            <span class="px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-300 rounded-full">In Stock</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-3">
-                                <button class="text-blue-400 hover:text-blue-300" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                                <button class="text-red-400 hover:text-red-300" title="Delete">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+                                    @medicine.Manufacturer
+                                </td>
 
-                    <!-- Row 6 - EXPIRED (RED - Critical) -->
-                    <tr class="hover:bg-slate-700/20 transition-colors">
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">Aspirin 100mg</div>
-                            <div class="text-xs text-slate-400">Lot: E-45</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-300">Aspirin</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-medium bg-rose-500/20 text-rose-300 rounded">Cardiac</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">125</div>
-                            <div class="text-xs text-slate-400">Min: 60</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm font-medium text-white">$3.25</td>
-                        <td class="px-6 py-4 text-sm text-red-400 font-bold">2024-10-05</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">BT-2023-089</td>
-                        <td class="px-6 py-4">
-                            <span class="px-3 py-1 text-xs font-bold bg-red-500/20 text-red-300 rounded-full border border-red-500/30">Expired</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-3">
-                                <button class="text-blue-400 hover:text-blue-300" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                                <button class="text-red-400 hover:text-red-300" title="Delete">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <!-- Row 7 - OUT OF STOCK (RED - Critical) -->
-                    <tr class="hover:bg-slate-700/20 transition-colors">
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-white">Vitamin C 500mg</div>
-                            <div class="text-xs text-slate-400">Lot: F-12</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-300">Ascorbic Acid</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-medium bg-green-500/20 text-green-300 rounded">Vitamins</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-bold text-red-400">0</div>
-                            <div class="text-xs text-slate-400">Min: 100</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm font-medium text-white">$6.50</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">2026-07-22</td>
-                        <td class="px-6 py-4 text-sm text-slate-300">BT-2024-201</td>
-                        <td class="px-6 py-4">
-                            <span class="px-3 py-1 text-xs font-bold bg-red-500/20 text-red-300 rounded-full border border-red-500/30">Out of Stock</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-3">
-                                <button class="text-blue-400 hover:text-blue-300" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                                <button class="text-red-400 hover:text-red-300" title="Delete">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button @onclick="() => OpenModal(medicine)" class="text-indigo-400 hover:text-indigo-300 mr-3">Edit</button>
+                                    <button @onclick="() => DeleteMedicine(medicine)" class="text-red-400 hover:text-red-300">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    }
                 </tbody>
             </table>
         </div>
 
-        <!-- Footer / Pagination -->
-        <div class="px-6 py-4 border-t border-slate-700/50 bg-slate-700/20">
-            <div class="flex items-center justify-between">
-                <div class="text-sm text-slate-400">
-                    Showing <span class="font-medium text-white">1</span> to <span class="font-medium text-white">7</span> of <span class="font-medium text-white">47</span> medicines
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        Previous
-                    </button>
-                    <button class="px-3 py-2 bg-blue-600 text-white rounded-lg font-medium">1</button>
-                    <button class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">2</button>
-                    <button class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">3</button>
-                    <button class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors">
-                        Next
-                    </button>
-                </div>
+        @if (Medicines.Any() != true)
+        {
+            <div class="p-20 text-center text-slate-500">
+                <svg class="w-20 h-20 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <p class="text-lg font-medium">No medicines in inventory</p>
+                <p class="text-sm mt-2">Click "Add Medicine" to get started</p>
             </div>
-        </div>
+        }
     </div>
 </div>
 
+@if (showModal)
+{
+    @* MODAL HTML (Add/Edit Medicine) - Omitted for brevity *@
+    <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl border border-slate-700">
+            <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">
+                        @(currentMedicine.MedicineId == 0 ? "Add New Medicine" : "Edit Medicine")
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Enter medicine details to add to inventory</p>
+                </div>
+                <button @onclick="() => showModal = false" class="text-slate-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Medicine Name</label>
+                            <input @bind="currentMedicine.Name"
+                                                     class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                     placeholder="e.g. Amoxicillin 500mg" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Generic Name</label>
+                            <input @bind="currentMedicine.GenericName"
+                                                     class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white"
+                                                     placeholder="e.g. Amoxicillin" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Category</label>
+                            <select @bind="currentMedicine.Category"
+                                                      class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="Antibiotics">Antibiotics</option>
+                                <option value="Painkillers">Painkillers</option>
+                                <option value="Diabetes">Diabetes</option>
+                                <option value="Cardiac">Cardiac</option>
+                                <option value="Vitamins">Vitamins</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Quantity</label>
+                            <input @bind="currentMedicine.Quantity" type="number"
+                                                     class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Price ($)</label>
+                            <input @bind="currentMedicine.Price" type="number" step="0.01"
+                                                     class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white" />
+                        </div>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Manufacturer</label>
+                            <select @bind="currentMedicine.Manufacturer"
+                                                      class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">— Select Manufacturer —</option>
+                                @foreach (var supplier in Suppliers)
+                                {
+                                    <option value="@supplier.Name">@supplier.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Min Stock Level</label>
+                            <input @bind="currentMedicine.MinQuantity" type="number"
+                                                     class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Expiry Date</label>
+                            <input @bind="currentMedicine.ExpiryDate" type="date"
+                                                     class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Batch Number</label>
+                            <input @bind="currentMedicine.Batch"
+                                                     class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white"
+                                                     placeholder="e.g. BT-2024-001" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Storage Location</label>
+                            <input @bind="currentMedicine.StorageLocation"
+                                                     class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white"
+                                                     placeholder="e.g. Shelf A-12" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-4 px-6 pb-6">
+                <button @onclick="() => showModal = false"
+                                    class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors font-medium">
+                    Cancel
+                </button>
+                <button @onclick="SaveMedicine"
+                                    class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-medium shadow-lg">
+                    @(currentMedicine.MedicineId == 0 ? "Add Medicine" : "Update Medicine")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
-    // Data will be loaded from API later
+    [Inject]
+    public IMedicineService MedicineService { get; set; } = default!;
+    [Inject]
+    public IJSRuntime JS { get; set; } = default!;
+    [Inject]
+    public ISupplierService SupplierService { get; set; } = default!;
+
+    private string SearchTerm = "";
+    private string SelectedCategory = "";
+    private bool showModal = false;
+
+    private PharmacyManagementSystem.Services.Medicines currentMedicine = new();
+
+    private List<PharmacyManagementSystem.Services.Medicines> Medicines { get; set; } = new();
+    private List<PharmacyManagementSystem.Services.Supplier> Suppliers { get; set; } = new();
+
+    private IEnumerable<string> UniqueCategories => Medicines.Select(m => m.Category).Distinct().OrderBy(c => c);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    // Helper to determine the status text
+    private string GetMedicineStatus(PharmacyManagementSystem.Services.Medicines medicine)
+    {
+        var daysUntilExpiry = (medicine.ExpiryDate - DateTime.Today).TotalDays;
+
+        if (medicine.Quantity <= 0)
+        {
+            return "No Stock";
+        }
+        if (daysUntilExpiry <= 30) // Expiring soon (within 30 days)
+        {
+            return "Expiring Soon";
+        }
+        if (medicine.Quantity <= medicine.MinQuantity)
+        {
+            return "Low Stock";
+        }
+
+        return "In Stock";
+    }
+
+    // Helper to determine the Tailwind CSS classes based on status
+    private string GetStatusClasses(string status)
+    {
+        return status switch
+        {
+            "No Stock" => "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-700/50 text-red-300 border border-red-600",
+            "Expiring Soon" => "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-700/50 text-red-300 border border-red-600",
+            "Low Stock" => "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-700/50 text-amber-300 border border-amber-600",
+            "In Stock" => "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-700/50 text-emerald-300 border border-emerald-600",
+            _ => "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-700/50 text-slate-300"
+        };
+    }
+
+
+    private async Task LoadData()
+    {
+        try
+        {
+            Medicines = (await MedicineService.GetAllMedicinesAsync()).ToList();
+            Suppliers = (await SupplierService.GetAllSuppliersAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Error loading data: {ex.Message}");
+        }
+    }
+
+    private IEnumerable<PharmacyManagementSystem.Services.Medicines> FilteredMedicines =>
+      Medicines.Where(m =>
+        (string.IsNullOrWhiteSpace(SelectedCategory) || m.Category == SelectedCategory) &&
+        (string.IsNullOrWhiteSpace(SearchTerm) ||
+        m.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+        m.GenericName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+        m.Manufacturer.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)));
+
+    private void OpenModal(PharmacyManagementSystem.Services.Medicines? med)
+    {
+        currentMedicine = med is null
+          ? new PharmacyManagementSystem.Services.Medicines() { ExpiryDate = DateTime.Today.AddYears(2), MinQuantity = 100 }
+          : new PharmacyManagementSystem.Services.Medicines
+          {
+              MedicineId = med.MedicineId,
+              Name = med.Name,
+              GenericName = med.GenericName,
+              Category = med.Category,
+              Quantity = med.Quantity,
+              MinQuantity = med.MinQuantity,
+              Price = med.Price,
+              ExpiryDate = med.ExpiryDate,
+              Batch = med.Batch,
+              Manufacturer = med.Manufacturer,
+              StorageLocation = med.StorageLocation,
+              SupplierId = med.SupplierId
+          };
+        showModal = true;
+    }
+
+    private async Task SaveMedicine()
+    {
+        if (string.IsNullOrWhiteSpace(currentMedicine.Name))
+        {
+            await JS.InvokeVoidAsync("alert", "Medicine name is required!");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(currentMedicine.Manufacturer))
+        {
+            await JS.InvokeVoidAsync("alert", "Manufacturer/Supplier must be selected!");
+            return;
+        }
+
+        try
+        {
+            if (currentMedicine.MedicineId == 0)
+            {
+                await MedicineService.AddMedicineAsync(currentMedicine);
+                await JS.InvokeVoidAsync("alert", "Medicine added successfully!");
+            }
+            else
+            {
+                await MedicineService.UpdateMedicineAsync(currentMedicine);
+                await JS.InvokeVoidAsync("alert", $"Medicine '{currentMedicine.Name}' updated!");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Database error during save: {ex.Message}");
+        }
+
+        showModal = false;
+        currentMedicine = new PharmacyManagementSystem.Services.Medicines();
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task DeleteMedicine(PharmacyManagementSystem.Services.Medicines medicine)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete {medicine.Name}?"))
+        {
+            try
+            {
+                await MedicineService.DeleteMedicineAsync(medicine.MedicineId);
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", $"Database error during delete: {ex.Message}");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportData()
+    {
+        if (Medicines is null || !Medicines.Any())
+        {
+            await JS.InvokeVoidAsync("alert", "No data to export.");
+            return;
+        }
+
+        var csv = new StringBuilder();
+        csv.AppendLine("Name,Generic Name,Category,Quantity,Price,Expiry Date,Manufacturer,Batch");
+
+        foreach (var m in FilteredMedicines)
+        {
+            var line = $"{m.Name},{m.GenericName},{m.Category},{m.Quantity},{m.Price:F2},{m.ExpiryDate.ToShortDateString()},{m.Manufacturer},{m.Batch}";
+            csv.AppendLine(line);
+        }
+
+        await JS.InvokeVoidAsync("downloadFile", "inventory_export.csv", csv.ToString(), "text/csv");
+        await JS.InvokeVoidAsync("alert", $"Export successful! Downloading {FilteredMedicines.Count()} items.");
+    }
 }
