@@ -20,5 +20,7 @@ namespace PharmacyManagementSystem.Services
 		Task<TopStats> GetAggregateStatsAsync(string period = "Monthly");
 		Task<List<SaleReportEntry>> GetSalesReportsAsync(string period = "Monthly");
 		Task<List<CategoryData>> GetSalesByCategoryAsync(DateTime startDate, DateTime endDate);
+		Task<List<CategoryData>> GetSalesByPaymentMethodAsync(string period = "Monthly");
+		Task<List<CategoryData>> GetTopSellingMedicinesAsync(string period = "Monthly");
 	}
 }

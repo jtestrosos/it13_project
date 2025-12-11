@@ -72,6 +72,7 @@ namespace Medicine_ERP_Desktop
 			builder.Services.AddScoped<ISaleService, SaleService>();
 			builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
 			builder.Services.AddScoped<IStaffService, StaffService>();
+			builder.Services.AddScoped<IInventoryService, InventoryService>();
 			
 
 

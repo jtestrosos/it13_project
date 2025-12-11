@@ -20,6 +20,7 @@ namespace PharmacyManagementSystem.Services
 	{
 		public DateTime SaleDate { get; set; }
 		public string CustomerName { get; set; } = "";
+		public string PaymentMethod { get; set; } = "";
 		public int Items { get; set; }
 		public decimal TotalAmount { get; set; }
 		public decimal Profit { get; set; }
@@ -29,5 +30,21 @@ namespace PharmacyManagementSystem.Services
 	{
 		public string Category { get; set; } = "";
 		public decimal Value { get; set; }
+	}
+
+	public class InventoryStats
+	{
+		public int TotalItems { get; set; }
+		public decimal TotalValue { get; set; }
+		public int LowStockCount { get; set; }
+		public int ExpiredCount { get; set; }
+	}
+
+	public class PurchaseStats
+	{
+		public int TotalPurchases { get; set; }
+		public decimal TotalSpent { get; set; }
+		public int PendingOrders { get; set; }
+		public int CompletedOrders { get; set; }
 	}
 }

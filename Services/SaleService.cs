@@ -151,10 +151,248 @@ namespace PharmacyManagementSystem.Services
 			return recentSales;
 		}
 
-		public async Task<TopStats> GetAggregateStatsAsync(string period = "Monthly") { throw new NotImplementedException(); }
-		public async Task<List<SaleReportEntry>> GetSalesReportsAsync(string period = "Monthly") { throw new NotImplementedException(); }
-		public async Task<List<CategoryData>> GetSalesByCategoryAsync(DateTime startDate, DateTime endDate) { throw new NotImplementedException(); }
+		// -----------------------------------------------------------------
+		// Get Aggregate Stats
+		// -----------------------------------------------------------------
+		public async Task<TopStats> GetAggregateStatsAsync(string period = "Monthly")
+		{
+			var (startDate, endDate) = GetDateRange(period);
+			var stats = new TopStats();
 
-		private (DateTime startDate, DateTime endDate) GetDateRange(string period) { throw new NotImplementedException(); }
+			string sql = @"
+				SELECT 
+					COUNT(DISTINCT s.SaleId) as TotalTransactions,
+					ISNULL(SUM(s.TotalAmount), 0) as TotalRevenue,
+					ISNULL(SUM(si.Quantity), 0) as ItemsSold
+				FROM Sales s
+				LEFT JOIN SaleItems si ON s.SaleId = si.SaleId
+				WHERE s.SaleDate >= @StartDate AND s.SaleDate < @EndDate";
+
+			try
+			{
+				using var connection = new SqlConnection(_connectionString);
+				await connection.OpenAsync();
+				using var command = new SqlCommand(sql, connection);
+				command.Parameters.AddWithValue("@StartDate", startDate);
+				command.Parameters.AddWithValue("@EndDate", endDate);
+
+				using var reader = await command.ExecuteReaderAsync();
+				if (await reader.ReadAsync())
+				{
+					stats.TotalTransactions = reader.GetInt32(reader.GetOrdinal("TotalTransactions"));
+					stats.TotalRevenue = reader.GetDecimal(reader.GetOrdinal("TotalRevenue"));
+					stats.ItemsSold = reader.GetInt32(reader.GetOrdinal("ItemsSold"));
+					// Assuming 20% profit margin as cost is not tracked
+					stats.TotalProfit = stats.TotalRevenue * 0.20m; 
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error in GetAggregateStatsAsync: {ex.Message}");
+			}
+
+			return stats;
+		}
+
+		// -----------------------------------------------------------------
+		// Get Sales Reports
+		// -----------------------------------------------------------------
+		public async Task<List<SaleReportEntry>> GetSalesReportsAsync(string period = "Monthly")
+		{
+			var (startDate, endDate) = GetDateRange(period);
+			var list = new List<SaleReportEntry>();
+
+			string sql = @"
+				SELECT 
+					s.SaleDate,
+					s.CustomerName,
+					s.PaymentMethod,
+					ISNULL(SUM(si.Quantity), 0) as ItemsCount,
+					s.TotalAmount
+				FROM Sales s
+				LEFT JOIN SaleItems si ON s.SaleId = si.SaleId
+				WHERE s.SaleDate >= @StartDate AND s.SaleDate < @EndDate
+				GROUP BY s.SaleId, s.SaleDate, s.CustomerName, s.PaymentMethod, s.TotalAmount
+				ORDER BY s.SaleDate DESC";
+
+			try
+			{
+				using var connection = new SqlConnection(_connectionString);
+				await connection.OpenAsync();
+				using var command = new SqlCommand(sql, connection);
+				command.Parameters.AddWithValue("@StartDate", startDate);
+				command.Parameters.AddWithValue("@EndDate", endDate);
+
+				using var reader = await command.ExecuteReaderAsync();
+				while (await reader.ReadAsync())
+				{
+					var totalAmount = reader.GetDecimal(reader.GetOrdinal("TotalAmount"));
+					list.Add(new SaleReportEntry
+					{
+						SaleDate = reader.GetDateTime(reader.GetOrdinal("SaleDate")),
+						CustomerName = reader.IsDBNull(reader.GetOrdinal("CustomerName")) ? "Walk-in" : reader.GetString(reader.GetOrdinal("CustomerName")),
+						PaymentMethod = reader.IsDBNull(reader.GetOrdinal("PaymentMethod")) ? "Cash" : reader.GetString(reader.GetOrdinal("PaymentMethod")),
+						Items = reader.GetInt32(reader.GetOrdinal("ItemsCount")),
+						TotalAmount = totalAmount,
+						Profit = totalAmount * 0.20m // Assumed 20% margin
+					});
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error in GetSalesReportsAsync: {ex.Message}");
+			}
+
+			return list;
+		}
+
+		// -----------------------------------------------------------------
+		// Get Sales By Category
+		// -----------------------------------------------------------------
+		public async Task<List<CategoryData>> GetSalesByCategoryAsync(DateTime startDate, DateTime endDate)
+		{
+			var list = new List<CategoryData>();
+
+			string sql = @"
+				SELECT 
+					ISNULL(m.Category, 'Uncategorized') as Category,
+					ISNULL(SUM(si.Quantity * si.UnitPrice * (1 - si.DiscountPercent/100.0)), 0) as TotalValue
+				FROM SaleItems si
+				JOIN Medicines m ON si.MedicineId = m.MedicineId
+				JOIN Sales s ON si.SaleId = s.SaleId
+				WHERE s.SaleDate >= @StartDate AND s.SaleDate < @EndDate
+				GROUP BY m.Category";
+
+			try
+			{
+				using var connection = new SqlConnection(_connectionString);
+				await connection.OpenAsync();
+				using var command = new SqlCommand(sql, connection);
+				command.Parameters.AddWithValue("@StartDate", startDate);
+				command.Parameters.AddWithValue("@EndDate", endDate);
+
+				using var reader = await command.ExecuteReaderAsync();
+				while (await reader.ReadAsync())
+				{
+					var category = reader.IsDBNull(reader.GetOrdinal("Category")) 
+						? "Uncategorized" 
+						: reader.GetString(reader.GetOrdinal("Category"));
+					
+					list.Add(new CategoryData
+					{
+						Category = category,
+						Value = reader.GetDecimal(reader.GetOrdinal("TotalValue"))
+					});
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error in GetSalesByCategoryAsync: {ex.Message}");
+			}
+
+			return list;
+		}
+
+		// -----------------------------------------------------------------
+		// Get Sales By Payment Method (Pie Chart)
+		// -----------------------------------------------------------------
+		public async Task<List<CategoryData>> GetSalesByPaymentMethodAsync(string period = "Monthly")
+		{
+			var (startDate, endDate) = GetDateRange(period);
+			var list = new List<CategoryData>();
+
+			string sql = @"
+				SELECT 
+					ISNULL(PaymentMethod, 'Cash') as PaymentMethod,
+					COUNT(*) as TransactionCount,
+					ISNULL(SUM(TotalAmount), 0) as TotalValue
+				FROM Sales
+				WHERE SaleDate >= @StartDate AND SaleDate < @EndDate
+				GROUP BY PaymentMethod";
+
+			try
+			{
+				using var connection = new SqlConnection(_connectionString);
+				await connection.OpenAsync();
+				using var command = new SqlCommand(sql, connection);
+				command.Parameters.AddWithValue("@StartDate", startDate);
+				command.Parameters.AddWithValue("@EndDate", endDate);
+
+				using var reader = await command.ExecuteReaderAsync();
+				while (await reader.ReadAsync())
+				{
+					list.Add(new CategoryData
+					{
+						Category = reader.GetString(reader.GetOrdinal("PaymentMethod")),
+						Value = reader.GetDecimal(reader.GetOrdinal("TotalValue")) // Or use TransactionCount if preferred
+					});
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error in GetSalesByPaymentMethodAsync: {ex.Message}");
+			}
+			return list;
+		}
+
+		// -----------------------------------------------------------------
+		// Get Top Selling Medicines (Bar Chart)
+		// -----------------------------------------------------------------
+		public async Task<List<CategoryData>> GetTopSellingMedicinesAsync(string period = "Monthly")
+		{
+			var (startDate, endDate) = GetDateRange(period);
+			var list = new List<CategoryData>();
+
+			string sql = @"
+				SELECT TOP 5
+					m.Name,
+					ISNULL(SUM(si.Quantity), 0) as TotalSold
+				FROM SaleItems si
+				JOIN Sales s ON si.SaleId = s.SaleId
+				JOIN Medicines m ON si.MedicineId = m.MedicineId
+				WHERE s.SaleDate >= @StartDate AND s.SaleDate < @EndDate
+				GROUP BY m.Name
+				ORDER BY TotalSold DESC";
+
+			try
+			{
+				using var connection = new SqlConnection(_connectionString);
+				await connection.OpenAsync();
+				using var command = new SqlCommand(sql, connection);
+				command.Parameters.AddWithValue("@StartDate", startDate);
+				command.Parameters.AddWithValue("@EndDate", endDate);
+
+				using var reader = await command.ExecuteReaderAsync();
+				while (await reader.ReadAsync())
+				{
+					list.Add(new CategoryData
+					{
+						Category = reader.GetString(reader.GetOrdinal("Name")),
+						Value = reader.GetInt32(reader.GetOrdinal("TotalSold"))
+					});
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error in GetTopSellingMedicinesAsync: {ex.Message}");
+			}
+			return list;
+		}
+
+		// -----------------------------------------------------------------
+		// Helper: Get Date Range
+		// -----------------------------------------------------------------
+		private (DateTime startDate, DateTime endDate) GetDateRange(string period)
+		{
+			var now = DateTime.Today;
+			return period switch
+			{
+				"Daily" => (now, now.AddDays(1)),
+				"Weekly" => (now.AddDays(-(int)now.DayOfWeek), now.AddDays(7 - (int)now.DayOfWeek)),
+				"Monthly" => (new DateTime(now.Year, now.Month, 1), new DateTime(now.Year, now.Month, 1).AddMonths(1)),
+				"Yearly" => (new DateTime(now.Year, 1, 1), new DateTime(now.Year + 1, 1, 1)),
+				_ => (new DateTime(now.Year, now.Month, 1), new DateTime(now.Year, now.Month, 1).AddMonths(1))
+			};
+		}
 	}
 }

@@ -142,5 +142,60 @@ namespace PharmacyManagementSystem.Services
 			}
 			return order;
 		}
+
+		// -----------------------------------------------------------------
+		// 3. Get Purchase Stats
+		// -----------------------------------------------------------------
+		public async Task<PurchaseStats> GetPurchaseStatsAsync(string period = "Monthly")
+		{
+			var stats = new PurchaseStats();
+			var (startDate, endDate) = GetDateRange(period);
+
+			string sql = @"
+				SELECT 
+					COUNT(*) as TotalPurchases,
+					ISNULL(SUM(TotalAmount), 0) as TotalSpent,
+					SUM(CASE WHEN Status = 'Pending' THEN 1 ELSE 0 END) as PendingOrders,
+					SUM(CASE WHEN Status = 'Completed' OR Status = 'Received' THEN 1 ELSE 0 END) as CompletedOrders
+				FROM PurchaseOrders
+				WHERE OrderDate >= @StartDate AND OrderDate < @EndDate";
+
+			try
+			{
+				using var connection = new SqlConnection(_connectionString);
+				await connection.OpenAsync();
+				using var command = new SqlCommand(sql, connection);
+				command.Parameters.AddWithValue("@StartDate", startDate);
+				command.Parameters.AddWithValue("@EndDate", endDate);
+
+				using var reader = await command.ExecuteReaderAsync();
+				if (await reader.ReadAsync())
+				{
+					stats.TotalPurchases = reader.GetInt32(reader.GetOrdinal("TotalPurchases"));
+					stats.TotalSpent = reader.GetDecimal(reader.GetOrdinal("TotalSpent"));
+					stats.PendingOrders = reader.GetInt32(reader.GetOrdinal("PendingOrders"));
+					stats.CompletedOrders = reader.GetInt32(reader.GetOrdinal("CompletedOrders"));
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error in GetPurchaseStatsAsync: {ex.Message}");
+			}
+
+			return stats;
+		}
+
+		private (DateTime startDate, DateTime endDate) GetDateRange(string period)
+		{
+			var now = DateTime.Today;
+			return period switch
+			{
+				"Daily" => (now, now.AddDays(1)),
+				"Weekly" => (now.AddDays(-(int)now.DayOfWeek), now.AddDays(7 - (int)now.DayOfWeek)),
+				"Monthly" => (new DateTime(now.Year, now.Month, 1), new DateTime(now.Year, now.Month, 1).AddMonths(1)),
+				"Yearly" => (new DateTime(now.Year, 1, 1), new DateTime(now.Year + 1, 1, 1)),
+				_ => (new DateTime(now.Year, now.Month, 1), new DateTime(now.Year, now.Month, 1).AddMonths(1))
+			};
+		}
 	}
 }

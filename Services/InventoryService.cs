@@ -31,7 +31,6 @@ namespace PharmacyManagementSystem.Services
 					Name,
 					Category,
 					Manufacturer,
-					Cost,
 					Quantity,
 					MinQuantity,
 					Price,
@@ -52,7 +51,6 @@ namespace PharmacyManagementSystem.Services
 					Name = reader.GetString("Name"),
 					Category = reader.GetString("Category"),
 					Manufacturer = reader.GetString("Manufacturer"),
-					Cost = reader.GetDecimal("Cost"),
 					Quantity = reader.GetInt32("Quantity"),
 					MinQuantity = reader.GetInt32("MinQuantity"),
 					Price = reader.GetDecimal("Price"),
@@ -104,7 +102,7 @@ namespace PharmacyManagementSystem.Services
 		{
 			string sql = @"
 				SELECT
-					MedicineId, Name, Category, Manufacturer, Cost, Quantity, MinQuantity, Price, ExpiryDate
+					MedicineId, Name, Category, Manufacturer, Quantity, MinQuantity, Price, ExpiryDate
 				FROM dbo.Medicines
 				WHERE MedicineId = @MedicineId";
 
@@ -122,7 +120,6 @@ namespace PharmacyManagementSystem.Services
 					Name = reader.GetString("Name"),
 					Category = reader.GetString("Category"),
 					Manufacturer = reader.GetString("Manufacturer"),
-					Cost = reader.GetDecimal("Cost"),
 					Quantity = reader.GetInt32("Quantity"),
 					MinQuantity = reader.GetInt32("MinQuantity"),
 					Price = reader.GetDecimal("Price"),
@@ -158,9 +155,9 @@ namespace PharmacyManagementSystem.Services
 		{
 			string sql = @"
 				INSERT INTO dbo.Medicines
-				(Name, Category, Manufacturer, Cost, Quantity, MinQuantity, Price, ExpiryDate)
+				(Name, Category, Manufacturer, Quantity, MinQuantity, Price, ExpiryDate)
 				VALUES
-				(@Name, @Category, @Manufacturer, @Cost, @Quantity, @MinQuantity, @Price, @ExpiryDate)";
+				(@Name, @Category, @Manufacturer, @Quantity, @MinQuantity, @Price, @ExpiryDate)";
 
 			using var connection = new SqlConnection(_connectionString);
 			await connection.OpenAsync();
@@ -169,7 +166,6 @@ namespace PharmacyManagementSystem.Services
 			command.Parameters.AddWithValue("@Name", item.Name);
 			command.Parameters.AddWithValue("@Category", item.Category);
 			command.Parameters.AddWithValue("@Manufacturer", item.Manufacturer);
-			command.Parameters.AddWithValue("@Cost", item.Cost);
 			command.Parameters.AddWithValue("@Quantity", item.Quantity);
 			command.Parameters.AddWithValue("@MinQuantity", item.MinQuantity);
 			command.Parameters.AddWithValue("@Price", item.Price);
@@ -189,7 +185,6 @@ namespace PharmacyManagementSystem.Services
 					Name = @Name,
 					Category = @Category,
 					Manufacturer = @Manufacturer,
-					Cost = @Cost,
 					Quantity = @Quantity,
 					MinQuantity = @MinQuantity,
 					Price = @Price,
@@ -204,7 +199,6 @@ namespace PharmacyManagementSystem.Services
 			command.Parameters.AddWithValue("@Name", item.Name);
 			command.Parameters.AddWithValue("@Category", item.Category);
 			command.Parameters.AddWithValue("@Manufacturer", item.Manufacturer);
-			command.Parameters.AddWithValue("@Cost", item.Cost);
 			command.Parameters.AddWithValue("@Quantity", item.Quantity);
 			command.Parameters.AddWithValue("@MinQuantity", item.MinQuantity);
 			command.Parameters.AddWithValue("@Price", item.Price);
@@ -228,29 +222,40 @@ namespace PharmacyManagementSystem.Services
 			return await command.ExecuteNonQueryAsync() > 0;
 		}
 
-        Task<List<InventoryService>> IInventoryService.GetAllInventoryAsync()
-        {
-            throw new NotImplementedException();
-        }
+		// -----------------------------------------------------------------
+		// 8. Get Inventory Stats
+		// -----------------------------------------------------------------
+		public async Task<InventoryStats> GetInventoryStatsAsync()
+		{
+			var stats = new InventoryStats();
+			string sql = @"
+				SELECT
+					COUNT(MedicineId) as TotalItems,
+					ISNULL(SUM(Quantity * Price), 0) as TotalValue,
+					(SELECT COUNT(*) FROM dbo.Medicines WHERE Quantity <= MinQuantity) as LowStockCount,
+					(SELECT COUNT(*) FROM dbo.Medicines WHERE ExpiryDate <= GETDATE()) as ExpiredCount
+				FROM dbo.Medicines";
 
-        Task<InventoryService?> IInventoryService.GetInventoryItemByIdAsync(int medicineId)
-        {
-            throw new NotImplementedException();
-        }
+			try
+			{
+				using var connection = new SqlConnection(_connectionString);
+				await connection.OpenAsync();
+				using var command = new SqlCommand(sql, connection);
 
-        Task<List<LowStockItem>> IInventoryService.GetLowStockItemsAsync()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> AddInventoryItemAsync(InventoryService item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> UpdateInventoryItemAsync(InventoryService item)
-        {
-            throw new NotImplementedException();
-        }
-    }
+				using var reader = await command.ExecuteReaderAsync();
+				if (await reader.ReadAsync())
+				{
+					stats.TotalItems = reader.GetInt32(reader.GetOrdinal("TotalItems"));
+					stats.TotalValue = reader.GetDecimal(reader.GetOrdinal("TotalValue"));
+					stats.LowStockCount = reader.GetInt32(reader.GetOrdinal("LowStockCount"));
+					stats.ExpiredCount = reader.GetInt32(reader.GetOrdinal("ExpiredCount"));
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error in GetInventoryStatsAsync: {ex.Message}");
+			}
+			return stats;
+		}
+	}
 }

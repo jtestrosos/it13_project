@@ -34,5 +34,6 @@ namespace PharmacyManagementSystem.Services
 	{
 		Task<List<PurchaseOrders>> GetAllOrdersAsync();
 		Task<PurchaseOrders> GetOrderDetailsAsync(int purchaseOrderId);
+		Task<PurchaseStats> GetPurchaseStatsAsync(string period = "Monthly");
 	}
 }
