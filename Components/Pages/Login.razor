@@ -1,0 +1,164 @@
+﻿@page "/"
+@page "/login"
+@layout AuthLayout
+
+@using PharmacyManagementSystem.Services
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Login - Medicine ERP System</PageTitle>
+
+<div class="h-screen w-screen flex items-center justify-center bg-slate-900 px-4 py-0">
+    <div class="w-full max-w-sm">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-xl shadow-blue-500/30 mb-4">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-white mb-1">Medicine ERP System</h1>
+            <p class="text-slate-400 text-base">Sign in to your pharmacy management account</p>
+        </div>
+
+        <div class="bg-slate-800 rounded-2xl shadow-2xl p-8 w-full">
+            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
+
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <InputText @bind-Value="loginModel.Email"
+                                   placeholder="admin@pharmacy.com"
+                                   class="w-full pl-10 pr-3 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 11c0-2.209-1.791-4-4-4s-4 1.791-4 4 1.791 4 4 4m4-4c0-2.209 1.791-4 4-4s4 1.791 4 4-1.791 4-4 4m-4-4v6" />
+                            </svg>
+                        </div>
+                        <InputText @bind-Value="loginModel.Password"
+                                   type="password"
+                                   placeholder="Enter your password"
+                                   class="w-full pl-10 pr-3 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                    </div>
+                </div>
+
+                <div class="flex items-center mb-6">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" @bind="loginModel.RememberMe"
+                               class="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500" />
+                        <span class="ml-2 text-sm text-slate-300">Remember me</span>
+                    </label>
+                </div>
+
+                <button type="submit"
+                        disabled="@isLoading"
+                        class="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white font-bold text-lg rounded-xl transition-all duration-200 shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-3">
+                    @if (isLoading)
+                    {
+                        <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
+                            <path class="opacity-75" d="M4 12a8 8 0 018-8v8z"></path>
+                        </svg>
+                        <span>Signing in...</span>
+                    }
+                    else
+                    {
+                        <span>Sign In</span>
+                    }
+                </button>
+            </EditForm>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-center text-sm font-medium">
+                    @errorMessage
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Inject]
+    public IAuthService AuthService { get; set; } = default!;
+
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var loggedIn = await JS.InvokeAsync<string>("localStorage.getItem", "isLoggedIn");
+        if (loggedIn == "true")
+        {
+            await JS.InvokeVoidAsync("localStorage.removeItem", "isLoggedIn");
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            // Call the implemented login service
+            var result = await AuthService.LoginAsync(loginModel.Email, loginModel.Password, loginModel.RememberMe);
+
+            if (result.Success)
+            {
+                // On success, the ErrorMessage field contains the Role
+                var userRole = result.ErrorMessage ?? "Staff";
+
+                await JS.InvokeVoidAsync("localStorage.setItem", "isLoggedIn", "true");
+                await JS.InvokeVoidAsync("localStorage.setItem", "userRole", userRole);
+                await JS.InvokeVoidAsync("localStorage.setItem", "userEmail", loginModel.Email);
+
+                Navigation.NavigateTo("/dashboard", forceLoad: true);
+            }
+            else
+            {
+                // On failure, the ErrorMessage field contains the error message
+                errorMessage = result.ErrorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login Error: {ex.Message}");
+            errorMessage = "A server connection error occurred. Please check network/credentials.";
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    public static async Task Logout(IJSRuntime js, NavigationManager nav)
+    {
+        await js.InvokeVoidAsync("localStorage.removeItem", "isLoggedIn");
+        await js.InvokeVoidAsync("localStorage.removeItem", "userRole");
+        await js.InvokeVoidAsync("localStorage.removeItem", "userEmail");
+        nav.NavigateTo("/login", forceLoad: true);
+    }
+
+    public class LoginModel
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public bool RememberMe { get; set; } = false;
+    }
+}

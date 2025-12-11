@@ -1,0 +1,376 @@
+﻿@page "/inventory"
+@layout DashboardLayout
+
+@using PharmacyManagementSystem.Services
+@using System.Text
+@using System.Linq
+@using System;
+
+
+<PageTitle>Medicine Inventory - PharmERP</PageTitle>
+
+<div class="h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Medicine Inventory</h1>
+            <p class="text-slate-400 mt-1">Manage your pharmacy stock and inventory</p>
+        </div>
+        <button @onclick="() => OpenModal(null)"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span class="font-medium">Add Medicine</span>
+        </button>
+    </div>
+
+    <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+        <div class="p-6 border-b border-slate-700/50">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-white">Medicine List</h2>
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input type="search" @bind="SearchTerm" @bind:event="oninput"
+                               placeholder="Search medicines..."
+                               class="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
+                    </div>
+
+                    @* CATEGORY DROPDOWN FILTER *@
+                    <select @bind="SelectedCategory"
+                            class="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Categories</option>
+                        @foreach (var category in UniqueCategories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+
+                    @* EXPORT BUTTON *@
+                    <button @onclick="ExportData"
+                            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg flex items-center space-x-2 border border-slate-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>Export</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-700">
+                <thead class="bg-slate-700/50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Generic</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Qty</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Price</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Expiry</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Supplier</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-slate-800/30 divide-y divide-slate-700">
+                    @if (FilteredMedicines != null)
+                    {
+                        @foreach (var medicine in FilteredMedicines)
+                        {
+                            var rowClass = medicine.Quantity <= medicine.MinQuantity ? "bg-red-900/10 hover:bg-red-900/30" : "hover:bg-slate-700/50";
+                            <tr class="@rowClass">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">@medicine.Name</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@medicine.GenericName</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@medicine.Category</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm @(medicine.Quantity <= medicine.MinQuantity ? "text-red-400 font-bold" : "text-slate-300")">@medicine.Quantity</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">$@medicine.Price.ToString("F2")</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@medicine.ExpiryDate.ToShortDateString()</td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+                                    @medicine.Manufacturer
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button @onclick="() => OpenModal(medicine)" class="text-indigo-400 hover:text-indigo-300 mr-3">Edit</button>
+                                    <button @onclick="() => DeleteMedicine(medicine)" class="text-red-400 hover:text-red-300">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Medicines.Any() != true)
+        {
+            <div class="p-20 text-center text-slate-500">
+                <svg class="w-20 h-20 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <p class="text-lg font-medium">No medicines in inventory</p>
+                <p class="text-sm mt-2">Click "Add Medicine" to get started</p>
+            </div>
+        }
+    </div>
+</div>
+
+@if (showModal)
+{
+    @* MODAL HTML (Add/Edit Medicine) *@
+    <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl border border-slate-700">
+            <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">
+                        @(currentMedicine.MedicineId == 0 ? "Add New Medicine" : "Edit Medicine")
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Enter medicine details to add to inventory</p>
+                </div>
+                <button @onclick="() => showModal = false" class="text-slate-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Medicine Name</label>
+                            <input @bind="currentMedicine.Name"
+                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="e.g. Amoxicillin 500mg" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Generic Name</label>
+                            <input @bind="currentMedicine.GenericName"
+                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white"
+                                   placeholder="e.g. Amoxicillin" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Category</label>
+                            <select @bind="currentMedicine.Category"
+                                    class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="Antibiotics">Antibiotics</option>
+                                <option value="Painkillers">Painkillers</option>
+                                <option value="Diabetes">Diabetes</option>
+                                <option value="Cardiac">Cardiac</option>
+                                <option value="Vitamins">Vitamins</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Quantity</label>
+                            <input @bind="currentMedicine.Quantity" type="number"
+                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Price ($)</label>
+                            <input @bind="currentMedicine.Price" type="number" step="0.01"
+                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white" />
+                        </div>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Manufacturer</label>
+                            <select @bind="currentMedicine.Manufacturer"
+                                    class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">— Select Manufacturer —</option>
+                                @foreach (var supplier in Suppliers)
+                                {
+                                    <option value="@supplier.Name">@supplier.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Min Stock Level</label>
+                            <input @bind="currentMedicine.MinQuantity" type="number"
+                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Expiry Date</label>
+                            <input @bind="currentMedicine.ExpiryDate" type="date"
+                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Batch Number</label>
+                            <input @bind="currentMedicine.Batch"
+                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white"
+                                   placeholder="e.g. BT-2024-001" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Storage Location</label>
+                            <input @bind="currentMedicine.StorageLocation"
+                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white"
+                                   placeholder="e.g. Shelf A-12" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-4 px-6 pb-6">
+                <button @onclick="() => showModal = false"
+                        class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors font-medium">
+                    Cancel
+                </button>
+                <button @onclick="SaveMedicine"
+                        class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-medium shadow-lg">
+                    @(currentMedicine.MedicineId == 0 ? "Add Medicine" : "Update Medicine")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject]
+    public IMedicineService MedicineService { get; set; } = default!;
+    [Inject]
+    public IJSRuntime JS { get; set; } = default!;
+    [Inject]
+    public ISupplierService SupplierService { get; set; } = default!;
+
+    private string SearchTerm = "";
+    private string SelectedCategory = "";
+    private bool showModal = false;
+
+    // FIX: Using fully qualified type for current model
+    private PharmacyManagementSystem.Services.Medicines currentMedicine = new();
+
+    // FIX: Using fully qualified types for lists
+    private List<PharmacyManagementSystem.Services.Medicines> Medicines { get; set; } = new();
+    private List<PharmacyManagementSystem.Services.Supplier> Suppliers { get; set; } = new();
+
+    private IEnumerable<string> UniqueCategories => Medicines.Select(m => m.Category).Distinct().OrderBy(c => c);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            Medicines = (await MedicineService.GetAllMedicinesAsync()).ToList();
+            Suppliers = (await SupplierService.GetAllSuppliersAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Error loading data: {ex.Message}");
+        }
+    }
+
+    private IEnumerable<PharmacyManagementSystem.Services.Medicines> FilteredMedicines =>
+        Medicines.Where(m =>
+            (string.IsNullOrWhiteSpace(SelectedCategory) || m.Category == SelectedCategory) &&
+            (string.IsNullOrWhiteSpace(SearchTerm) ||
+             m.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+             m.GenericName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+             m.Manufacturer.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)));
+
+    private void OpenModal(PharmacyManagementSystem.Services.Medicines? med)
+    {
+        currentMedicine = med is null
+            ? new PharmacyManagementSystem.Services.Medicines() { ExpiryDate = DateTime.Today.AddYears(2), MinQuantity = 100 }
+            : new PharmacyManagementSystem.Services.Medicines
+            {
+                MedicineId = med.MedicineId,
+                Name = med.Name,
+                GenericName = med.GenericName,
+                Category = med.Category,
+                Quantity = med.Quantity,
+                MinQuantity = med.MinQuantity,
+                Price = med.Price,
+                ExpiryDate = med.ExpiryDate,
+                Batch = med.Batch,
+                Manufacturer = med.Manufacturer,
+                StorageLocation = med.StorageLocation,
+                SupplierId = med.SupplierId
+            };
+        showModal = true;
+    }
+
+    private async Task SaveMedicine()
+    {
+        if (string.IsNullOrWhiteSpace(currentMedicine.Name))
+        {
+            await JS.InvokeVoidAsync("alert", "Medicine name is required!");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(currentMedicine.Manufacturer))
+        {
+            await JS.InvokeVoidAsync("alert", "Manufacturer/Supplier must be selected!");
+            return;
+        }
+
+        try
+        {
+            if (currentMedicine.MedicineId == 0)
+            {
+                await MedicineService.AddMedicineAsync(currentMedicine);
+                await JS.InvokeVoidAsync("alert", "Medicine added successfully!");
+            }
+            else
+            {
+                await MedicineService.UpdateMedicineAsync(currentMedicine);
+                await JS.InvokeVoidAsync("alert", $"Medicine '{currentMedicine.Name}' updated!");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Database error during save: {ex.Message}");
+        }
+
+        showModal = false;
+        currentMedicine = new PharmacyManagementSystem.Services.Medicines();
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task DeleteMedicine(PharmacyManagementSystem.Services.Medicines medicine)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete {medicine.Name}?"))
+        {
+            try
+            {
+                await MedicineService.DeleteMedicineAsync(medicine.MedicineId);
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", $"Database error during delete: {ex.Message}");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportData()
+    {
+        if (Medicines is null || !Medicines.Any())
+        {
+            await JS.InvokeVoidAsync("alert", "No data to export.");
+            return;
+        }
+
+        var csv = new StringBuilder();
+        csv.AppendLine("Name,Generic Name,Category,Quantity,Price,Expiry Date,Manufacturer,Batch");
+
+        foreach (var m in FilteredMedicines)
+        {
+            var line = $"{m.Name},{m.GenericName},{m.Category},{m.Quantity},{m.Price:F2},{m.ExpiryDate.ToShortDateString()},{m.Manufacturer},{m.Batch}";
+            csv.AppendLine(line);
+        }
+
+        await JS.InvokeVoidAsync("downloadFile", "inventory_export.csv", csv.ToString(), "text/csv");
+        await JS.InvokeVoidAsync("alert", $"Export successful! Downloading {FilteredMedicines.Count()} items.");
+    }
+}

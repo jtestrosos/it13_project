@@ -1,0 +1,14 @@
+﻿<Router AppAssembly="@typeof(MauiProgram).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.DashboardLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+
+    <NotFound>
+        <LayoutView Layout="@typeof(Layout.DashboardLayout)">
+            <div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+                <h1 class="text-6xl font-bold">404 – Page Not Found</h1>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
