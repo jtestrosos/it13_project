@@ -22,6 +22,6 @@
 		public string Id { get; set; }
 		public string Supplier { get; set; }
 		public DateTime OrderDate { get; set; }
-		public string Status { get; set; }
+		public string Status { get; set	; }
 	}
 }
