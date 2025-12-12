@@ -81,12 +81,30 @@
                     {
                         @foreach (var medicine in FilteredMedicines)
                         {
-                            var rowClass = medicine.Quantity <= medicine.MinQuantity ? "bg-red-900/10 hover:bg-red-900/30" : "hover:bg-slate-700/50";
-                            <tr class="@rowClass">
+                            var rowClass = "hover:bg-slate-700/50"; 
+                            string qtyColor = "text-slate-300";
+
+                            if (medicine.Quantity <= 0)
+                            {
+                                rowClass = "bg-red-950/40 hover:bg-red-900/50 border-l-4 border-red-500";
+                                qtyColor = "text-red-400 font-bold";
+                            }
+                            else if (medicine.Quantity <= medicine.MinQuantity)
+                            {
+                                rowClass = "bg-orange-950/40 hover:bg-orange-900/50 border-l-4 border-orange-500";
+                                qtyColor = "text-orange-400 font-bold";
+                            }
+                            else
+                            {
+                                rowClass = "bg-emerald-950/20 hover:bg-emerald-900/30 border-l-4 border-emerald-500";
+                                qtyColor = "text-emerald-400 font-bold";
+                            }
+
+                            <tr class="@rowClass transition-all duration-200">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">@medicine.Name</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@medicine.GenericName</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@medicine.Category</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm @(medicine.Quantity <= medicine.MinQuantity ? "text-red-400 font-bold" : "text-slate-300")">@medicine.Quantity</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm @qtyColor">@medicine.Quantity</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">$@medicine.Price.ToString("F2")</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@medicine.ExpiryDate.ToShortDateString()</td>
 
