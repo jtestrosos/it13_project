@@ -58,7 +58,7 @@
 								 class="@(m.Quantity > 0 ? "bg-slate-700/50 hover:bg-slate-700/80 cursor-pointer" : "bg-red-900/30 text-red-400 cursor-not-allowed") p-4 rounded-xl border border-slate-700/50 transition-colors">
 								<h4 class="font-medium text-white truncate">@m.Name</h4>
 								<p class="text-xs text-slate-400 mt-1">Stock: @m.Quantity</p>
-								<p class="text-xl font-bold text-emerald-400 mt-2">$@m.Price:F2</p>
+								<p class="text-xl font-bold text-emerald-400 mt-2">$@m.Price</p>
 							</div>
 						}
 					</div>
@@ -102,7 +102,7 @@
 								<div class="flex items-center justify-between mb-2">
 									<div>
 										<h4 class="font-medium text-white">@item.Medicine.Name</h4>
-										<p class="text-xs text-slate-400">$@item.Medicine.Price:F2 each</p>
+										<p class="text-xs text-slate-400">$@item.Medicine.Price each</p>
 									</div>
 									<button @onclick="() => RemoveFromCart(item)"
 											class="text-red-400 hover:text-red-300">
@@ -138,7 +138,7 @@
 								</div>
 
 								<div class="mt-2 text-right">
-									<span class="text-base font-bold text-emerald-400">$@item.Total:F2</span>
+									<span class="text-base font-bold text-emerald-400">$@item.Total</span>
 								</div>
 							</div>
 						}
@@ -148,15 +148,15 @@
 						<div class="space-y-2">
 							<div class="flex justify-between text-sm">
 								<span class="text-slate-400">Subtotal:</span>
-								<span class="text-white">$@Subtotal:F2</span>
+								<span class="text-white">$@Subtotal</span>
 							</div>
 							<div class="flex justify-between text-sm">
 								<span class="text-slate-400">Discount:</span>
-								<span class="text-red-400">-$@TotalDiscount:F2</span>
+								<span class="text-red-400">-$@TotalDiscount</span>
 							</div>
 							<div class="flex justify-between pt-3 border-t border-slate-600">
 								<span class="text-xl font-bold text-white">Total:</span>
-								<span class="text-2xl font-bold text-emerald-400">$@Total:F2</span>
+								<span class="text-2xl font-bold text-emerald-400">$@Total</span>
 							</div>
 						</div>
 
@@ -176,7 +176,7 @@
 								   class="w-full px-3 py-2 text-sm bg-slate-800/60 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500">
 							@if (amountPaid > Total)
 							{
-								<p class="mt-2 text-xs text-emerald-400 text-right">Change: $@(amountPaid - Total):F2</p>
+								<p class="mt-2 text-xs text-emerald-400 text-right">Change: $@(amountPaid - Total)</p>
 							}
 						</div>
 
@@ -225,7 +225,10 @@
 								<th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Disc %</th>
 								<th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Line Total</th>
 								<th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Sale Total</th>
-								<th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+								@if (userRole != "Staff")
+								{
+									<th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+								}
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-slate-800">
@@ -244,15 +247,17 @@
 										}
 
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">@item.MedicineName</td>
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-right text-slate-400">$@item.UnitPrice:F2</td>
+										<td class="px-6 py-4 whitespace-nowrap text-sm text-right text-slate-400">$@item.UnitPrice</td>
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-right text-slate-400">@item.Quantity</td>
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-400">@item.DiscountPct%</td>
-										<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right text-emerald-400">$@item.TotalAmount:F2</td>
+										<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right text-emerald-400">$@item.TotalAmount.ToString("F2")</td>
 
 										@if (isFirstRow)
 										{
-											<td class="px-6 py-4 whitespace-nowrap text-base font-bold text-right text-emerald-400" rowspan="@rowSpan">$@sale.TotalSaleAmount:F2</td>
+											<td class="px-6 py-4 whitespace-nowrap text-base font-bold text-right text-emerald-400" rowspan="@rowSpan">$@sale.TotalSaleAmount</td>
 
+											@if (userRole != "Staff")
+											{
 											<td class="px-6 py-4 whitespace-nowrap text-right" rowspan="@rowSpan">
 												<div class="flex items-center justify-end space-x-2">
 													<button @onclick="() => EditSale(sale.SaleId)"
@@ -264,11 +269,12 @@
 													<button @onclick="() => DeleteSale(sale.SaleId)"
 															class="text-red-400 hover:text-red-300 p-1 rounded hover:bg-slate-700/50 transition-colors">
 														<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2.002 2.002 0 0116.138 21H7.862a2.002 2.002 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2.002 2.002 0 0116.138 21H7.862a2.002 2.002 0 01-1.995-1.858L5 7m5 4v6m4-6 qv6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
 														</svg>
 													</button>
 												</div>
 											</td>
+											}
 
 											isFirstRow = false;
 										}
@@ -299,6 +305,7 @@
 	private List<PharmacyManagementSystem.Services.Medicines> medicines = new();
 	private List<CartItem> cartItems = new();
 	private List<SaleRecord> recentSales = new();
+	private string userRole = "Staff";
 
 	private List<PharmacyManagementSystem.Services.Medicines> FilteredMedicines =>
 	string.IsNullOrWhiteSpace(searchQuery)
@@ -313,6 +320,16 @@
 
 	protected override async Task OnInitializedAsync()
 	{
+		// Load user role from localStorage
+		try
+		{
+			userRole = await JS!.InvokeAsync<string>("localStorage.getItem", "userRole") ?? "Staff";
+		}
+		catch
+		{
+			userRole = "Staff";
+		}
+
 		await LoadMedicines();
 		await LoadRecentSales();
 	}
@@ -421,7 +438,7 @@
 	 );
 
 			if (JS is not null) await JS.InvokeVoidAsync("alert",
-			 $"Sale completed successfully!\nTotal: ${Total:F2}\nPaid: ${amountPaid:F2}\nChange: ${(amountPaid - Total):F2}");
+			 $"Sale completed successfully!\nTotal: ${Total}\nPaid: ${amountPaid}\nChange: ${(amountPaid - Total)}");
 
 			cartItems.Clear();
 			amountPaid = 0;
@@ -437,8 +454,46 @@
 
 	private async Task EditSale(int saleId)
 	{
-		// TODO: Implement navigation to an EditSale page or open a modal
-		if (JS is not null) await JS.InvokeVoidAsync("alert", $"Editing Sale ID: {saleId}. Implementation pending.");
+		try
+		{
+			// Find the sale in recent sales
+			var saleToEdit = recentSales.FirstOrDefault(s => s.SaleId == saleId);
+			if (saleToEdit == null)
+			{
+				if (JS is not null) await JS.InvokeVoidAsync("alert", "Sale not found!");
+				return;
+			}
+
+			// Clear current cart
+			cartItems.Clear();
+
+			// Load sale items into cart
+			foreach (var item in saleToEdit.Items)
+			{
+				// Find the medicine from the inventory
+				var medicine = medicines.FirstOrDefault(m => m.Name == item.MedicineName);
+				if (medicine != null)
+				{
+					cartItems.Add(new CartItem
+					{
+						Medicine = medicine,
+						Quantity = item.Quantity,
+						DiscountPercent = item.DiscountPct
+					});
+				}
+			}
+
+			// Scroll to top to show the cart
+			StateHasChanged();
+			
+			if (JS is not null) 
+				await JS.InvokeVoidAsync("alert", $"Sale ID {saleId} loaded into cart for editing. Modify items and complete the sale to update.");
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Error editing sale: {ex.Message}");
+			if (JS is not null) await JS.InvokeVoidAsync("alert", $"Error loading sale: {ex.Message}");
+		}
 	}
 
 	private async Task DeleteSale(int saleId)

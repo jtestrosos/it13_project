@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using ApexCharts;
 using Medicine_ERP.Data;
 using Microsoft.AspNetCore.Components.WebView.Maui;
@@ -33,7 +33,7 @@ namespace Medicine_ERP_Desktop
 			var config = new ConfigurationBuilder()
 				.AddInMemoryCollection(new Dictionary<string, string?>
 				{
-					// ✅ NEW LOCAL SQL EXPRESS CONNECTION STRING
+					// ? NEW LOCAL SQL EXPRESS CONNECTION STRING
 					["ConnectionStrings:DefaultConnection"] =
 						"Data Source=MSI\\SQLEXPRESS;Database=db34512;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False;Command Timeout=30;",
 
@@ -72,8 +72,7 @@ namespace Medicine_ERP_Desktop
 			builder.Services.AddScoped<ISaleService, SaleService>();
 			builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
 			builder.Services.AddScoped<IStaffService, StaffService>();
-			builder.Services.AddScoped<IInventoryService, InventoryService>();
-			
+		builder.Services.AddScoped<IInventoryService, InventoryService>();			
 
 
 #if DEBUG

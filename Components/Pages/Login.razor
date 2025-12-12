@@ -130,7 +130,7 @@
                 await JS.InvokeVoidAsync("localStorage.setItem", "isLoggedIn", "true");
                 await JS.InvokeVoidAsync("localStorage.setItem", "userRole", userRole);
                 await JS.InvokeVoidAsync("localStorage.setItem", "userEmail", loginModel.Email);
-                Navigation.NavigateTo("/dashboard", forceLoad: true);
+                Navigation.NavigateTo("/dashboard");
             }
             else
             {

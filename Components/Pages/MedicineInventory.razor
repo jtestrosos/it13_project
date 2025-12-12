@@ -366,7 +366,7 @@
 
         foreach (var m in FilteredMedicines)
         {
-            var line = $"{m.Name},{m.GenericName},{m.Category},{m.Quantity},{m.Price:F2},{m.ExpiryDate.ToShortDateString()},{m.Manufacturer},{m.Batch}";
+            var line = $"{m.Name},{m.GenericName},{m.Category},{m.Quantity},{m.Price},{m.ExpiryDate.ToShortDateString()},{m.Manufacturer},{m.Batch}";
             csv.AppendLine(line);
         }
 

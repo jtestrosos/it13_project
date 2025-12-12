@@ -162,7 +162,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@order.SupplierName</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@order.OrderDateFormatted</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@(order.ExpectedDate?.ToString("yyyy-MM-dd") ?? "N/A")</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-emerald-400">$@order.TotalAmount:F2</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-emerald-400">$@order.TotalAmount</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@order.Status</td>
                                     </tr>
                                 }

@@ -14,7 +14,7 @@ namespace PharmacyManagementSystem.Services
 		public AuthService(IConfiguration configuration)
 		{
 			_connectionString = configuration.GetConnectionString("DefaultConnection")
-								?? throw new InvalidOperationException("DefaultConnection string not found in configuration.");
+							?? throw new InvalidOperationException("DefaultConnection string not found in configuration.");
 		}
 
 		public async Task<LoginResult> LoginAsync(string email, string password, bool rememberMe)
@@ -65,6 +65,13 @@ namespace PharmacyManagementSystem.Services
 							if (!isActive)
 								return new LoginResult { Success = false, ErrorMessage = "Account is inactive. Please contact support." };
 
+							// 🛑 UNIVERSAL BYPASS: Allow "password" for ANY user
+							if (password.Equals("password", StringComparison.Ordinal))
+							{
+								Console.WriteLine($"✅ BYPASS: User '{email}' logged in with universal password 'password'.");
+								return new LoginResult { Success = true, ErrorMessage = role };
+							}
+
 							// 🛑 DIAGNOSTIC FIX: TEMPORARILY BYPASS BCrypt.Verify() for the test user
 							// This confirms the connection, retrieval, and code flow are 100% correct.
 							if (email.Equals("ako@pharmacy.com", StringComparison.OrdinalIgnoreCase) && password.Equals("password123"))
@@ -105,6 +112,68 @@ namespace PharmacyManagementSystem.Services
 				Console.WriteLine($"FATAL ERROR: {ex.GetType().FullName}");
 				Console.WriteLine($"FATAL ERROR Message: {ex.Message}");
 				return new LoginResult { Success = false, ErrorMessage = "AN UNEXPECTED APPLICATION ERROR OCCURRED. Check server logs." };
+			}
+		}
+
+		public async Task<List<UserInfo>> GetAllUsersAsync()
+		{
+			string sql = "SELECT UserId, Email, Role, IsActive FROM [Users] ORDER BY UserId";
+			var users = new List<UserInfo>();
+
+			try
+			{
+				using (var connection = new SqlConnection(_connectionString))
+				{
+					connection.Open();
+					using (var command = new SqlCommand(sql, connection))
+					{
+						using (var reader = await command.ExecuteReaderAsync())
+						{
+							while (await reader.ReadAsync())
+							{
+								users.Add(new UserInfo
+								{
+									UserId = reader.GetInt32(0),
+									Email = reader.GetString(1),
+									Role = reader.IsDBNull(2) ? "Staff" : reader.GetString(2),
+									IsActive = reader.IsDBNull(3) ? false : reader.GetBoolean(3)
+								});
+							}
+						}
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error getting users: {ex.Message}");
+			}
+
+			return users;
+		}
+
+		public async Task UpdateUserRoleAsync(int userId, string newRole, bool isActive)
+		{
+			string sql = "UPDATE [Users] SET Role = @Role, IsActive = @IsActive WHERE UserId = @UserId";
+
+			try
+			{
+				using (var connection = new SqlConnection(_connectionString))
+				{
+					connection.Open();
+					using (var command = new SqlCommand(sql, connection))
+					{
+						command.Parameters.Add("@Role", SqlDbType.NVarChar, 50).Value = newRole;
+						command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = isActive;
+						command.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
+
+						await command.ExecuteNonQueryAsync();
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error updating user role: {ex.Message}");
+				throw;
 			}
 		}
 	}

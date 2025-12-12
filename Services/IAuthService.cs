@@ -13,5 +13,16 @@
 	public interface IAuthService
 	{
 		Task<LoginResult> LoginAsync(string Email, string PasswordHash, bool rememberMe);
+		Task<List<UserInfo>> GetAllUsersAsync();
+		Task UpdateUserRoleAsync(int userId, string newRole, bool isActive);
+	}
+
+	// UserInfo DTO for role management
+	public class UserInfo
+	{
+		public int UserId { get; set; }
+		public string Email { get; set; } = "";
+		public string Role { get; set; } = "";
+		public bool IsActive { get; set; }
 	}
 }

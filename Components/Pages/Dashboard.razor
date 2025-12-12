@@ -1,5 +1,9 @@
 ﻿@page "/dashboard"
 @layout DashboardLayout
+@using PharmacyManagementSystem.Services
+@inject IInventoryService InventoryService
+@inject ISaleService SaleService
+@inject IPurchaseOrderService PurchaseService
 
 <PageTitle>Dashboard - PharmERP</PageTitle>
 
@@ -11,103 +15,206 @@
     </div>
 
     <div class="p-6">
-        <!-- Stats Cards – 100% clean empty state -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <!-- Total Medicines -->
-            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-slate-400 text-sm font-medium">Total Medicines</span>
-                    <div class="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                        </svg>
-                    </div>
-                </div>
-                <div class="text-3xl font-bold text-white">—</div>
-                <p class="text-slate-500 text-sm mt-2">Waiting for data...</p>
+        @if (isLoading)
+        {
+            <div class="text-center py-20">
+                <p class="text-slate-400">Loading dashboard data...</p>
             </div>
-
-            <!-- Low Stock -->
-            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-amber-500/50 transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-slate-400 text-sm font-medium">Low Stock Items</span>
-                    <div class="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
+        }
+        else
+        {
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <!-- Total Medicines -->
+                <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-slate-400 text-sm font-medium">Total Medicines</span>
+                        <div class="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                            </svg>
+                        </div>
                     </div>
+                    <div class="text-3xl font-bold text-white">@totalMedicines</div>
+                    <p class="text-slate-500 text-sm mt-2">In stock</p>
                 </div>
-                <div class="text-3xl font-bold text-white">—</div>
-                <p class="text-slate-500 text-sm mt-2">No low stock</p>
-            </div>
 
-            <!-- Expiring Soon -->
-            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-red-500/50 transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-slate-400 text-sm font-medium">Expiring Soon</span>
-                    <div class="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                <!-- Low Stock -->
+                <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-amber-500/50 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-slate-400 text-sm font-medium">Low Stock Items</span>
+                        <div class="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
                     </div>
+                    <div class="text-3xl font-bold text-amber-400">@lowStockCount</div>
+                    <p class="text-slate-500 text-sm mt-2">Need restock</p>
                 </div>
-                <div class="text-3xl font-bold text-white">—</div>
-                <p class="text-slate-500 text-sm mt-2">No expirations</p>
-            </div>
 
-            <!-- Daily Sales -->
-            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-slate-400 text-sm font-medium">Daily Sales</span>
-                    <div class="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                <!-- Expiring Soon -->
+                <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-red-500/50 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-slate-400 text-sm font-medium">Expiring Soon</span>
+                        <div class="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
                     </div>
+                    <div class="text-3xl font-bold text-red-400">@expiringCount</div>
+                    <p class="text-slate-500 text-sm mt-2">Next 30 days</p>
                 </div>
-                <div class="text-3xl font-bold text-white">$—</div>
-                <p class="text-slate-500 text-sm mt-2">No sales today</p>
-            </div>
-        </div>
 
-        <!-- Charts – empty placeholders -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-                <h3 class="text-lg font-semibold text-white mb-4">Sales Analytics</h3>
-                <div class="h-64 flex items-center justify-center text-slate-500">
-                    <div class="text-center">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        <p>No data available yet</p>
+                <!-- Daily Sales -->
+                <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-slate-400 text-sm font-medium">Today's Sales</span>
+                        <div class="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
                     </div>
+                    <div class="text-3xl font-bold text-emerald-400">@dailySales.ToString("$#,##0.00")</div>
+                    <p class="text-slate-500 text-sm mt-2">@dailyTransactions transactions</p>
                 </div>
             </div>
 
-            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-                <h3 class="text-lg font-semibold text-white mb-4">Inventory by Category</h3>
-                <div class="h-64 flex items-center justify-center text-slate-500">
-                    <div class="text-center">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055zM20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-                        </svg>
-                        <p>No data available yet</p>
-                    </div>
+            <!-- Recent Activity -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+                    <h3 class="text-lg font-semibold text-white mb-4">Low Stock Alerts</h3>
+                    @if (lowStockItems.Any())
+                    {
+                        <div class="space-y-3">
+                            @foreach (var item in lowStockItems.Take(5))
+                            {
+                                <div class="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
+                                    <div>
+                                        <p class="text-white font-medium">@item.Name</p>
+                                        <p class="text-slate-400 text-sm">Stock: @item.Quantity</p>
+                                    </div>
+                                    <span class="px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full text-xs font-medium">Low</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-16 text-slate-500">No low stock items</div>
+                    }
+                </div>
+
+                <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+                    <h3 class="text-lg font-semibold text-white mb-4">Recent Purchase Orders</h3>
+                    @if (recentOrders.Any())
+                    {
+                        <div class="space-y-3">
+                            @foreach (var order in recentOrders.Take(5))
+                            {
+                                <div class="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
+                                    <div>
+                                        <p class="text-white font-medium">@order.SupplierName</p>
+                                        <p class="text-slate-400 text-sm">@order.OrderDateFormatted</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-white font-semibold">@order.TotalAmount.ToString("$#,##0.00")</p>
+                                        <span class="text-xs @(order.Status == "Completed" ? "text-emerald-400" : "text-amber-400")">@order.Status</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-16 text-slate-500">No orders recorded</div>
+                    }
                 </div>
             </div>
-        </div>
-
-        <!-- Alerts & Orders – empty state -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-                <h3 class="text-lg font-semibold text-white mb-4">Alerts & Notifications</h3>
-                <div class="text-center py-16 text-slate-500">No alerts at the moment</div>
-            </div>
-
-            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-                <h3 class="text-lg font-semibold text-white mb-4">Recent Purchase Orders</h3>
-                <div class="text-center py-16 text-slate-500">No orders recorded</div>
-            </div>
-        </div>
+        }
     </div>
 </div>
+
+@code {
+    private bool isLoading = true;
+    private int totalMedicines = 0;
+    private int lowStockCount = 0;
+    private int expiringCount = 0;
+    private decimal dailySales = 0;
+    private int dailyTransactions = 0;
+    private List<LowStockItem> lowStockItems = new();
+    private List<PurchaseOrders> recentOrders = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadDashboardData();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Dashboard Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            // Get inventory stats
+            var inventoryStats = await InventoryService.GetInventoryStatsAsync();
+            totalMedicines = inventoryStats.TotalItems;
+            lowStockCount = inventoryStats.LowStockCount;
+            expiringCount = inventoryStats.ExpiredCount;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading inventory stats: {ex.Message}");
+            totalMedicines = 0;
+            lowStockCount = 0;
+            expiringCount = 0;
+        }
+
+        try
+        {
+            // Get low stock items
+            lowStockItems = await InventoryService.GetLowStockItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading low stock items: {ex.Message}");
+            lowStockItems = new List<LowStockItem>();
+        }
+
+        try
+        {
+            // Get today's sales
+            var salesStats = await SaleService.GetAggregateStatsAsync("Daily");
+            dailySales = salesStats.TotalRevenue;
+            dailyTransactions = salesStats.TotalTransactions;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sales stats: {ex.Message}");
+            dailySales = 0;
+            dailyTransactions = 0;
+        }
+
+        try
+        {
+            // Get recent purchase orders
+            recentOrders = await PurchaseService.GetAllOrdersAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading purchase orders: {ex.Message}");
+            recentOrders = new List<PurchaseOrders>();
+        }
+    }
+}

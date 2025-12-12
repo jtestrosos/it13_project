@@ -13,6 +13,7 @@ namespace PharmacyManagementSystem.Services
 	// DTOs definition 
 	public class SaleItemRecord
 	{
+		public int MedicineId { get; set; }
 		public string MedicineName { get; set; } = string.Empty;
 		public decimal UnitPrice { get; set; }
 		public int Quantity { get; set; }
@@ -59,18 +60,19 @@ namespace PharmacyManagementSystem.Services
 			// TEMPORARY QUERY: Removed TOP and ORDER BY clauses for troubleshooting.
 			// This query will attempt to pull all linked sales data.
 			string sql = @"
-				SELECT
+				SELECT TOP 50
 					s.SaleId,
 					s.SaleDate,
 					s.TotalAmount AS TotalSaleAmount,
 					si.Quantity,
 					si.UnitPrice,
-					si.DiscountPercent AS DiscountPct,
-					(si.Quantity * si.UnitPrice) * (1 - si.DiscountPercent / 100.0) AS LineTotalAmount,
-					m.GenericName AS MedicineName
+					si.DiscountPct,
+					si.LineTotal AS LineTotalAmount,
+					m.Name AS MedicineName
 				FROM dbo.Sales s
 				JOIN dbo.SaleItems si ON s.SaleId = si.SaleId
-				JOIN dbo.Medicines m ON si.MedicineId = m.MedicineId";
+				JOIN dbo.Medicines m ON si.MedicineId = m.MedicineId
+				ORDER BY s.SaleDate DESC, s.SaleId DESC";
 
 			var allSaleData = new List<(
 				int SaleId,
@@ -87,8 +89,6 @@ namespace PharmacyManagementSystem.Services
 				using var connection = new SqlConnection(_connectionString);
 				await connection.OpenAsync();
 				using var command = new SqlCommand(sql, connection);
-
-				// Removed: command.Parameters.AddWithValue("@Limit", limit);
 
 				using var reader = await command.ExecuteReaderAsync();
 				while (await reader.ReadAsync())

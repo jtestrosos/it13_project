@@ -1,0 +1,300 @@
+@page "/roles"
+@layout DashboardLayout
+@using PharmacyManagementSystem.Services
+@inject IAuthService AuthService
+@inject IJSRuntime JS
+
+<PageTitle>Role Management - PharmERP</PageTitle>
+
+<div class="h-full flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div class="flex-shrink-0 p-6 border-b border-slate-700/50">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-white">Role Management</h1>
+                <p class="mt-1 text-sm text-slate-400">Manage user roles and permissions</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6">
+        @if (isLoading)
+        {
+            <div class="text-center py-20">
+                <p class="text-slate-400">Loading users...</p>
+            </div>
+        }
+        else
+        {
+            <!-- Users Table -->
+            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-700">
+                        <thead class="bg-slate-700/50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">User ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Current Role</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">
+                            @foreach (var user in users)
+                            {
+                                <tr class="hover:bg-slate-700/30 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-400">@user.UserId</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@user.Email</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="@GetRoleBadgeClass(user.Role) px-3 py-1 rounded-full text-xs font-semibold">
+                                            @user.Role
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        @if (user.IsActive)
+                                        {
+                                            <span class="text-emerald-400 flex items-center">
+                                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                                </svg>
+                                                Active
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-red-400 flex items-center">
+                                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                                </svg>
+                                                Inactive
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                        <button @onclick="() => OpenEditModal(user)" 
+                                                class="text-blue-400 hover:text-blue-300 mr-3 p-1 rounded hover:bg-slate-700/50 transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+                                        <button @onclick="() => ToggleUserStatus(user)" 
+                                                class="@(user.IsActive ? "text-red-400 hover:text-red-300" : "text-emerald-400 hover:text-emerald-300") p-1 rounded hover:bg-slate-700/50 transition-colors">
+                                            @if (user.IsActive)
+                                            {
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                                </svg>
+                                            }
+                                            else
+                                            {
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            }
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Edit Role Modal -->
+@if (showEditModal && selectedUser != null)
+{
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" @onclick="CloseEditModal">
+        <div class="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md p-6" @onclick:stopPropagation="true">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-white">Edit User Role</h2>
+                <button @onclick="CloseEditModal" class="text-slate-400 hover:text-slate-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                    <input type="text" value="@selectedUser.Email" disabled 
+                           class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-400 cursor-not-allowed" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Role</label>
+                    @if (selectedUser.Email.Equals(currentUserEmail, StringComparison.OrdinalIgnoreCase))
+                    {
+                        <input type="text" value="@selectedRole" disabled 
+                               class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-400 cursor-not-allowed" />
+                        <p class="text-xs text-yellow-400 mt-1">⚠️ You cannot change your own role</p>
+                    }
+                    else
+                    {
+                    <select @bind="selectedRole" 
+                            class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="Staff">Staff</option>
+                        <option value="Admin">Admin</option>
+                        @if (selectedUser.Role == "SuperAdmin")
+                        {
+                            <option value="SuperAdmin">SuperAdmin</option>
+                        }
+                    </select>
+                    }
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    @if (selectedUser.Email.Equals(currentUserEmail, StringComparison.OrdinalIgnoreCase))
+                    {
+                        <input type="checkbox" checked disabled class="w-4 h-4 text-slate-500 bg-slate-700/50 border-slate-600 rounded cursor-not-allowed opacity-50" />
+                        <label class="text-sm text-slate-500 cursor-not-allowed">Active (Cannot deactivate yourself)</label>
+                    }
+                    else
+                    {
+                        <input type="checkbox" @bind="selectedIsActive" 
+                               class="w-4 h-4 text-emerald-600 bg-slate-700 border-slate-600 rounded focus:ring-emerald-500" />
+                        <label class="text-sm text-slate-300">Active</label>
+                    }
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-6">
+                <button @onclick="CloseEditModal" 
+                        class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">
+                    Cancel
+                </button>
+                <button @onclick="SaveUserRole" 
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private List<UserInfo> users = new();
+    private bool showEditModal = false;
+    private UserInfo? selectedUser = null;
+    private string selectedRole = "Staff";
+    private bool selectedIsActive = true;
+    private string currentUserEmail = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Get current user email from localStorage
+        try
+        {
+            currentUserEmail = await JS.InvokeAsync<string>("localStorage.getItem", "userEmail") ?? "";
+        }
+        catch { }
+        
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        isLoading = true;
+        try
+        {
+            users = await AuthService.GetAllUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading users: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", "Error loading users");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenEditModal(UserInfo user)
+    {
+        selectedUser = user;
+        selectedRole = user.Role;
+        selectedIsActive = user.IsActive;
+        showEditModal = true;
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        selectedUser = null;
+    }
+
+    private async Task SaveUserRole()
+    {
+        if (selectedUser == null) return;
+
+        // Prevent SuperAdmin from changing their own role
+        if (selectedUser.Email.Equals(currentUserEmail, StringComparison.OrdinalIgnoreCase) && selectedRole != selectedUser.Role)
+        {
+            await JS.InvokeVoidAsync("alert", "You cannot change your own role!");
+            return;
+        }
+
+        // Prevent unauthorized promotion to SuperAdmin
+        if (selectedRole == "SuperAdmin" && selectedUser.Role != "SuperAdmin")
+        {
+             await JS.InvokeVoidAsync("alert", "You cannot promote users to SuperAdmin!");
+             return;
+        }
+
+        try
+        {
+            await AuthService.UpdateUserRoleAsync(selectedUser.UserId, selectedRole, selectedIsActive);
+            await JS.InvokeVoidAsync("alert", "User role updated successfully!");
+            CloseEditModal();
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating user role: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+    }
+
+    private async Task ToggleUserStatus(UserInfo user)
+    {
+        // Prevent deactivating own account
+        if (user.Email.Equals(currentUserEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            await JS.InvokeVoidAsync("alert", "You cannot deactivate your own account!");
+            return;
+        }
+
+        var action = user.IsActive ? "deactivate" : "activate";
+        var confirm = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to {action} {user.Email}?");
+        
+        if (confirm)
+        {
+            try
+            {
+                await AuthService.UpdateUserRoleAsync(user.UserId, user.Role, !user.IsActive);
+                await JS.InvokeVoidAsync("alert", $"User {action}d successfully!");
+                await LoadUsers();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error toggling user status: {ex.Message}");
+                await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+            }
+        }
+    }
+
+    private string GetRoleBadgeClass(string role)
+    {
+        return role switch
+        {
+            "SuperAdmin" => "bg-purple-500/20 text-purple-300 border border-purple-500/50",
+            "Admin" => "bg-blue-500/20 text-blue-300 border border-blue-500/50",
+            "Staff" => "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50",
+            _ => "bg-slate-500/20 text-slate-300 border border-slate-500/50"
+        };
+    }
+}
