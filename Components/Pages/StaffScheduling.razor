@@ -152,6 +152,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Staff</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Role</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-slate-800/30 divide-y divide-slate-700">
@@ -162,6 +163,10 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@shift.StaffName</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@shift.Role</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@shift.StartTime.ToString(@"hh\:mm") - @shift.EndTime.ToString(@"hh\:mm")</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button @onclick="() => EditShift(shift)" class="text-blue-400 hover:text-blue-300 mr-4 font-semibold transition-colors">Edit</button>
+                                        <button @onclick="() => DeleteShift(shift.ShiftId)" class="text-red-400 hover:text-red-300 font-semibold transition-colors">Archive</button>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -378,6 +383,41 @@
         showAddShiftModal = true;
     }
 
+    private void EditShift(PharmacyManagementSystem.Services.Shift shift)
+    {
+        newShift = new PharmacyManagementSystem.Services.Shift
+        {
+            ShiftId = shift.ShiftId,
+            StaffId = shift.StaffId,
+            StaffName = shift.StaffName,
+            Date = shift.Date,
+            DateString = shift.Date.ToString("yyyy-MM-dd"),
+            StartTime = shift.StartTime,
+            StartTimeString = shift.StartTime.ToString(@"hh\:mm"),
+            EndTime = shift.EndTime,
+            EndTimeString = shift.EndTime.ToString(@"hh\:mm")
+        };
+        showAddShiftModal = true;
+    }
+
+    private async Task DeleteShift(int shiftId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this shift?");
+        if (confirmed)
+        {
+            try
+            {
+                await StaffService.DeleteShiftAsync(shiftId);
+                await JS.InvokeVoidAsync("alert", "Shift deleted successfully.");
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", $"Error deleting shift: {ex.Message}");
+            }
+        }
+    }
+
     private async Task SaveShift()
     {
         // 1. Convert string inputs from HTML to TimeSpan and DateTime
@@ -411,8 +451,17 @@
 
         try
         {
-            await StaffService.AddShiftAsync(newShift);
-            await JS.InvokeVoidAsync("alert", "Shift scheduled successfully!");
+            if (newShift.ShiftId > 0)
+            {
+                await StaffService.UpdateShiftAsync(newShift);
+                await JS.InvokeVoidAsync("alert", "Shift updated successfully!");
+            }
+            else
+            {
+                await StaffService.AddShiftAsync(newShift);
+                await JS.InvokeVoidAsync("alert", "Shift scheduled successfully!");
+            }
+
             showAddShiftModal = false;
             await LoadData();
         }

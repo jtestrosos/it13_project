@@ -1,6 +1,108 @@
+/* Theme Variables */
+:root {
+    /* Light Mode Colors */
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f5f9;
+    --bg-sidebar: #ffffff;
+    --bg-header: #ffffff;
+    --bg-gradient-from: #f8fafc;
+    --bg-gradient-via: #f1f5f9;
+    --bg-gradient-to: #e2e8f0;
+
+    /* Table specific colors for light mode */
+    --table-bg: #ffffff;
+    --table-header-bg: #ffffff;
+    --table-row-bg: #ffffff;
+    --table-row-hover: #f8fafc;
+
+    /* Input/Form specific colors for light mode */
+    --input-bg: #ffffff;
+    --input-border: #e2e8f0;
+    --input-border-focus: #10b981;
+    --input-text: #0f172a;
+    --input-placeholder: #94a3b8;
+
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #64748b;
+
+    --border-color: #e2e8f0;
+    --border-color-dark: #cbd5e1;
+
+    --accent-color: #10b981;
+    --accent-hover: #059669;
+
+    --nav-text: #475569;
+    --nav-hover-bg: #f1f5f9;
+    --nav-hover-text: #10b981;
+    --nav-active-bg: #f1f5f9;
+    --nav-active-text: #10b981;
+
+    --scrollbar-track: #e2e8f0;
+    --scrollbar-thumb: #cbd5e1;
+    --scrollbar-thumb-hover: #94a3b8;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+    /* Dark Mode Colors */
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --bg-sidebar: #1e293b;
+    --bg-header: #1e293b;
+    --bg-gradient-from: #0f172a;
+    --bg-gradient-via: #1e293b;
+    --bg-gradient-to: #0f172a;
+
+    /* Table specific colors for dark mode */
+    --table-bg: #1e293b;
+    --table-header-bg: #334155;
+    --table-row-bg: #1e293b;
+    --table-row-hover: #334155;
+
+    /* Input/Form specific colors for dark mode */
+    --input-bg: #1e293b;
+    --input-border: #334155;
+    --input-border-focus: #10b981;
+    --input-text: #f8fafc;
+    --input-placeholder: #64748b;
+
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-tertiary: #94a3b8;
+
+    --border-color: #334155;
+    --border-color-dark: #475569;
+
+    --accent-color: #10b981;
+    --accent-hover: #34d399;
+
+    --nav-text: #cbd5e1;
+    --nav-hover-bg: #334155;
+    --nav-hover-text: #34d399;
+    --nav-active-bg: #334155;
+    --nav-active-text: #34d399;
+
+    --scrollbar-track: #1e293b;
+    --scrollbar-thumb: #475569;
+    --scrollbar-thumb-hover: #64748b;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
 html,
 body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 a,
@@ -109,24 +211,700 @@ h1:focus {
     }
 }
 
-/* Dark Styling for Scrollbar */
+/* Scrollbar Styling */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #1e293b;
-    /* slate-800 */
+    background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #475569;
-    /* slate-600 */
+    background: var(--scrollbar-thumb);
     border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
-    /* slate-500 */
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* Global Theme Utility Classes */
+
+/* Background Classes */
+.theme-bg-primary {
+    background: var(--bg-primary) !important;
+}
+
+.theme-bg-secondary {
+    background: var(--bg-secondary) !important;
+}
+
+.theme-bg-tertiary {
+    background: var(--bg-tertiary) !important;
+}
+
+.theme-bg-gradient {
+    background: linear-gradient(to bottom right, var(--bg-gradient-from), var(--bg-gradient-via), var(--bg-gradient-to)) !important;
+}
+
+/* Text Classes */
+.theme-text-primary {
+    color: var(--text-primary) !important;
+}
+
+.theme-text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+.theme-text-tertiary {
+    color: var(--text-tertiary) !important;
+}
+
+/* Border Classes */
+.theme-border {
+    border-color: var(--border-color) !important;
+}
+
+.theme-border-dark {
+    border-color: var(--border-color-dark) !important;
+}
+
+/* Card Styles */
+.theme-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.theme-card:hover {
+    border-color: var(--accent-color);
+}
+
+.theme-card-glass {
+    background: var(--bg-secondary);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+}
+
+/* Table Styles */
+.theme-table,
+table {
+    background: var(--table-bg) !important;
+    color: var(--text-primary);
+}
+
+.theme-table thead,
+table thead,
+thead {
+    background: var(--table-header-bg) !important;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.theme-table tbody tr,
+table tbody tr,
+tbody tr {
+    background: var(--table-row-bg) !important;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.theme-table tbody tr:hover,
+table tbody tr:hover,
+tbody tr:hover {
+    background: var(--table-row-hover) !important;
+}
+
+/* Form Styles - Comprehensive Input Coverage - MAXIMUM OVERRIDE */
+.theme-input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+textarea,
+select,
+.form-control,
+.form-input,
+[role="searchbox"] {
+    background: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border: 1px solid var(--input-border) !important;
+    border-color: var(--input-border) !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-radius: 0.5rem !important;
+    /* rounded-lg */
+    padding: 0.5rem 1rem !important;
+    transition: all 0.2s ease;
+}
+
+/* Override any Tailwind border classes */
+input.border-slate-600,
+input.border-slate-700,
+textarea.border-slate-600,
+textarea.border-slate-700,
+select.border-slate-600,
+select.border-slate-700 {
+    border-color: var(--input-border) !important;
+}
+
+.theme-input:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="search"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+input[type="time"]:focus,
+textarea:focus,
+select:focus,
+.form-control:focus,
+.form-input:focus,
+[role="searchbox"]:focus {
+    border-color: var(--input-border-focus) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+    /* focus:ring-2 */
+}
+
+.theme-input::placeholder,
+input::placeholder,
+textarea::placeholder,
+.form-control::placeholder,
+.form-input::placeholder {
+    color: var(--input-placeholder) !important;
+}
+
+/* Search Bar Specific Styles */
+input[type="search"],
+.search-input,
+.search-bar,
+[role="searchbox"] {
+    background: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border: 1px solid var(--input-border) !important;
+    border-color: var(--input-border) !important;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem !important;
+    /* rounded-lg */
+}
+
+input[type="search"]:focus,
+.search-input:focus,
+.search-bar:focus,
+[role="searchbox"]:focus {
+    border-color: var(--input-border-focus) !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+    /* focus:ring-2 */
+}
+
+
+/* Button Styles */
+.theme-button {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.theme-button:hover {
+    background: var(--accent-hover);
+}
+
+.theme-button-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.theme-button-secondary:hover {
+    background: var(--nav-hover-bg);
+    border-color: var(--accent-color);
+}
+
+/* Modal/Dialog Styles - Comprehensive Coverage - PLAIN */
+.theme-modal,
+.modal,
+.modal-content,
+.dialog,
+[role="dialog"],
+[role="alertdialog"],
+.popup,
+.overlay-panel {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+    color: var(--text-primary) !important;
+}
+
+.theme-modal-header,
+.modal-header,
+.dialog-header,
+.popup-header {
+    border-bottom: 1px solid var(--border-color) !important;
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+.theme-modal-footer,
+.modal-footer,
+.dialog-footer,
+.popup-footer {
+    border-top: 1px solid var(--border-color) !important;
+    background: var(--bg-secondary) !important;
+}
+
+.theme-modal-body,
+.modal-body,
+.dialog-body,
+.popup-body {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Modal Backdrop/Overlay */
+.modal-backdrop,
+.overlay,
+.dialog-backdrop {
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* All inputs inside modals - PLAIN with CONSISTENT BORDERS */
+.modal input[type="text"],
+.modal input[type="email"],
+.modal input[type="password"],
+.modal input[type="number"],
+.modal input[type="search"],
+.modal input[type="tel"],
+.modal input[type="url"],
+.modal input[type="date"],
+.modal input[type="time"],
+.modal textarea,
+.modal select,
+.dialog input,
+.dialog textarea,
+.dialog select,
+[role="dialog"] input,
+[role="dialog"] textarea,
+[role="dialog"] select {
+    background: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border: 1px solid var(--input-border) !important;
+    border-radius: 0.5rem !important;
+    padding: 0.75rem 1rem !important;
+}
+
+/* Consistent focus state for modal inputs */
+.modal input:focus,
+.modal textarea:focus,
+.modal select:focus,
+.dialog input:focus,
+.dialog textarea:focus,
+.dialog select:focus,
+[role="dialog"] input:focus,
+[role="dialog"] textarea:focus,
+[role="dialog"] select:focus {
+    border-color: var(--input-border-focus) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+}
+
+
+/* Modal titles and text */
+.modal-title,
+.dialog-title,
+.modal h1,
+.modal h2,
+.modal h3,
+.modal h4,
+.modal h5,
+.modal h6,
+.dialog h1,
+.dialog h2,
+.dialog h3 {
+    color: var(--text-primary) !important;
+}
+
+.modal p,
+.modal label,
+.modal span,
+.dialog p,
+.dialog label,
+.dialog span {
+    color: var(--text-secondary) !important;
+}
+
+/* Remove ALL colored/tinted backgrounds from modals */
+.bg-slate-700,
+.bg-slate-700\/50,
+.bg-slate-700\/70,
+.bg-slate-800,
+.bg-slate-800\/50,
+.bg-slate-800\/60,
+.bg-slate-900,
+.bg-slate-900\/40,
+.bg-slate-900\/70 {
+    background-color: var(--bg-secondary) !important;
+}
+
+/* Make modal containers plain */
+.fixed.inset-0>div,
+.modal>div,
+.dialog>div {
+    background: var(--bg-secondary) !important;
+}
+
+
+
+/* Badge Styles */
+.theme-badge {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+/* Alert Styles */
+.theme-alert {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+/* Chart Container Styles - Comprehensive Coverage */
+.chart-container,
+.apexcharts-canvas,
+.apexcharts-theme-light,
+.apexcharts-theme-dark,
+.chart,
+.graph,
+.visualization,
+[class*="chart"],
+[class*="graph"],
+canvas {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Chart wrapper/card containers - PURE WHITE in light mode */
+.chart-wrapper,
+.chart-card,
+.graph-container,
+.analytics-card,
+.stats-chart,
+div[class*="chart"],
+div[class*="Chart"],
+div[class*="graph"],
+div[class*="Graph"] {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Remove gray backgrounds from chart containers */
+.bg-gray-100,
+.bg-gray-200,
+.bg-gray-300,
+.bg-slate-100,
+.bg-slate-200,
+.bg-slate-300 {
+    background-color: var(--bg-secondary) !important;
+}
+
+/* ApexCharts specific styling */
+.apexcharts-tooltip,
+.apexcharts-xaxistooltip,
+.apexcharts-yaxistooltip {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.apexcharts-tooltip-title {
+    background: var(--bg-tertiary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.apexcharts-legend-text {
+    color: var(--text-primary) !important;
+}
+
+.apexcharts-text,
+.apexcharts-datalabel,
+.apexcharts-datalabel-label,
+.apexcharts-datalabel-value {
+    fill: var(--text-primary) !important;
+}
+
+.apexcharts-gridline {
+    stroke: var(--border-color) !important;
+}
+
+.apexcharts-xaxis-label,
+.apexcharts-yaxis-label {
+    fill: var(--text-secondary) !important;
+}
+
+/* Chart titles and labels */
+.chart-title,
+.graph-title,
+.chart-label,
+.axis-label {
+    color: var(--text-primary) !important;
+}
+
+/* Legend styling */
+.chart-legend,
+.graph-legend,
+.legend-item {
+    color: var(--text-primary) !important;
+}
+
+/* Data labels and tooltips */
+.data-label,
+.tooltip,
+.chart-tooltip {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+
+
+/* Override Tailwind dark mode classes */
+.bg-slate-900,
+.from-slate-900,
+.via-slate-900,
+.to-slate-900 {
+    background-color: var(--bg-primary) !important;
+}
+
+.bg-slate-800,
+.from-slate-800,
+.via-slate-800,
+.to-slate-800 {
+    background-color: var(--bg-secondary) !important;
+}
+
+.bg-slate-700 {
+    background-color: var(--bg-tertiary) !important;
+}
+
+.text-white {
+    color: var(--text-primary) !important;
+}
+
+.text-slate-300 {
+    color: var(--text-secondary) !important;
+}
+
+.text-slate-400,
+.text-slate-500 {
+    color: var(--text-tertiary) !important;
+}
+
+.border-slate-700,
+.border-slate-700\/50 {
+    border-color: var(--border-color) !important;
+}
+
+.hover\:bg-slate-700:hover,
+.hover\:bg-slate-700\/30:hover,
+.bg-slate-700\/30 {
+    background-color: var(--nav-hover-bg) !important;
+}
+
+.bg-slate-800\/50 {
+    background-color: var(--bg-secondary) !important;
+    opacity: 0.95;
+}
+
+/* Ensure gradient backgrounds use theme colors */
+.bg-gradient-to-br {
+    background: linear-gradient(to bottom right, var(--bg-gradient-from), var(--bg-gradient-via), var(--bg-gradient-to)) !important;
+}
+
+/* Smooth transitions for theme changes */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Preserve specific colors that shouldn't change with theme */
+.bg-emerald-500,
+.bg-emerald-400,
+.text-emerald-400,
+.text-emerald-500,
+.bg-blue-500,
+.text-blue-400,
+.bg-amber-500,
+.text-amber-400,
+.bg-red-500,
+.text-red-400 {
+    transition: none !important;
+}
+
+table th,
+table td,
+.table th,
+.table td {
+    border-color: var(--border-color) !important;
+    border-width: 1px !important;
+    font-weight: normal !important;
+}
+
+/* Remove bold borders from table rows */
+table,
+.table,
+tbody,
+thead,
+tr {
+    border-width: 1px !important;
+}
+
+/* Thin, subtle borders for table dividers */
+.divide-y>* {
+    border-width: 1px !important;
+}
+
+/* Remove bold borders from inputs */
+input,
+textarea,
+select,
+.form-control,
+.form-input {
+    border-width: 1px !important;
+    font-weight: normal !important;
+}
+
+/* Remove bold focus borders */
+input:focus,
+textarea:focus,
+select:focus,
+.form-control:focus,
+.form-input:focus {
+    border-width: 1px !important;
+    outline: none !important;
+}
+
+
+/* Application-Specific Styles */
+
+/* Expiring Medicine Rows - RED Background */
+.bg-red-950\/40,
+.bg-red-900\/50,
+tr.bg-red-950\/40,
+tr.bg-red-900\/50,
+[class*="bg-red-9"] {
+    background-color: rgba(127, 29, 29, 0.4) !important;
+    border-left-color: #ef4444 !important;
+}
+
+.bg-red-950\/40:hover,
+.bg-red-900\/50:hover,
+tr.bg-red-950\/40:hover,
+tr.bg-red-900\/50:hover {
+    background-color: rgba(127, 29, 29, 0.6) !important;
+}
+
+/* Expired Medicine Column/Cell - RED Background */
+td.expired,
+td.expiry-date.expired,
+.expired-cell,
+[data-expired="true"] {
+    background-color: rgba(127, 29, 29, 0.5) !important;
+    color: #fca5a5 !important;
+}
+
+
+/* Low Stock Rows - PLAIN (Remove Orange Background) */
+.bg-orange-950\/40,
+.bg-orange-900\/50,
+tr.bg-orange-950\/40,
+tr.bg-orange-900\/50 {
+    background-color: var(--table-row-bg) !important;
+    border-left-color: transparent !important;
+}
+
+.bg-orange-950\/40:hover,
+.bg-orange-900\/50:hover {
+    background-color: var(--table-row-hover) !important;
+}
+
+/* Good Stock Rows - PLAIN (Remove Green Background) */
+.bg-emerald-950\/20,
+.bg-emerald-900\/30,
+tr.bg-emerald-950\/20,
+tr.bg-emerald-900\/30 {
+    background-color: var(--table-row-bg) !important;
+    border-left-color: transparent !important;
+}
+
+.bg-emerald-950\/20:hover,
+.bg-emerald-900\/30:hover {
+    background-color: var(--table-row-hover) !important;
+}
+
+/* Make all backgrounds plain/simple */
+.bg-slate-700\/50,
+.bg-slate-700\/70,
+.bg-slate-800\/50,
+.bg-slate-800\/60,
+.bg-slate-900\/40,
+.bg-slate-900\/50,
+.bg-slate-900\/70 {
+    background-color: var(--bg-secondary) !important;
+}
+
+/* FORCE chart containers to be white/plain - MAXIMUM OVERRIDE */
+div.bg-slate-900\/50,
+div.bg-slate-800\/50,
+div.bg-slate-700\/50,
+.chart-container.bg-slate-900\/50,
+.rounded-xl.bg-slate-900\/50,
+.p-6.bg-slate-900\/50 {
+    background-color: var(--bg-secondary) !important;
+}
+
+
+/* Empty State Messages */
+.text-slate-500,
+.text-slate-600 {
+    color: var(--text-tertiary) !important;
+}
+
+/* Chart Container Backgrounds - Plain/Simple */
+[class*="chart"],
+[class*="graph"],
+.apexcharts-canvas,
+canvas {
+    background: var(--bg-secondary) !important;
+}
+
+/* Preserve Status Text Colors (but not backgrounds) */
+.text-red-400,
+.text-red-500,
+.text-orange-400,
+.text-amber-400,
+.text-emerald-400,
+.text-green-400,
+.text-blue-400 {
+    /* These colors should not change with theme */
+    transition: none !important;
+}
+
+/* Remove border colors for status indicators (make plain) */
+.border-red-500:not(.bg-red-950\/40):not(.bg-red-900\/50),
+.border-orange-500,
+.border-emerald-500 {
+    border-color: transparent !important;
 }

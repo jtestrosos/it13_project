@@ -9,7 +9,15 @@ namespace PharmacyManagementSystem.Services
 	public interface ISaleService
 	{
 		Task RecordSaleAsync(
-			List<Sales.CartItem> cartItems,
+			List<Medicine_ERP_Desktop.Components.Pages.Sales.CartItem> cartItems,
+			string paymentMethod,
+			decimal totalAmount,
+			decimal discountAmount,
+			decimal amountPaid);
+
+		Task UpdateSaleAsync(
+			int saleId,
+			List<Medicine_ERP_Desktop.Components.Pages.Sales.CartItem> cartItems,
 			string paymentMethod,
 			decimal totalAmount,
 			decimal discountAmount,
@@ -22,5 +30,10 @@ namespace PharmacyManagementSystem.Services
 		Task<List<CategoryData>> GetSalesByCategoryAsync(DateTime startDate, DateTime endDate);
 		Task<List<CategoryData>> GetSalesByPaymentMethodAsync(string period = "Monthly");
 		Task<List<CategoryData>> GetTopSellingMedicinesAsync(string period = "Monthly");
+		Task<bool> DeleteSaleAsync(int saleId);
+		
+		// Archive / Restore
+		Task<List<SaleRecord>> GetArchivedSalesAsync();
+		Task RestoreSaleAsync(int saleId);
 	}
 }

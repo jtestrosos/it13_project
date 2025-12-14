@@ -68,7 +68,7 @@
                     <div class="flex items-center mb-6">
                         <div class="flex-1 relative">
                             <input type="text" @bind="SearchTerm" @bind:event="oninput"
-                                   placeholder="Search suppliers by name, contact, or location..."
+                                   placeholder="     Search suppliers by name, contact, or location..."
                                    class="w-full px-4 py-2.5 pl-10 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
 
                             <svg class="absolute left-3 top-3 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,7 +101,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@s.City, @s.Country</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <button @onclick="() => OpenEditModal(s)" class="text-blue-400 hover:text-blue-300 mr-3">Edit</button>
-                                            <button @onclick="() => DeleteSupplier(s)" class="text-red-400 hover:text-red-300">Delete</button>
+                                            <button @onclick="() => DeleteSupplier(s)" class="text-red-400 hover:text-red-300">Archive</button>
                                         </td>
                                     </tr>
                                 }
@@ -152,6 +152,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Expected Date</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Total</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-slate-800/30 divide-y divide-slate-700">
@@ -164,6 +165,15 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@(order.ExpectedDate?.ToString("yyyy-MM-dd") ?? "N/A")</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-emerald-400">$@order.TotalAmount</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">@order.Status</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            @if (order.Status == "Pending")
+                                            {
+                                                <button @onclick="() => MarkOrderReceived(order.PurchaseOrderId)" 
+                                                        class="text-emerald-400 hover:text-emerald-300 font-medium text-xs border border-emerald-500/30 px-3 py-1 rounded hover:bg-emerald-500/10 transition-colors">
+                                                    Mark Received
+                                                </button>
+                                            }
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
@@ -216,12 +226,6 @@
                                    placeholder="contact@supplier.com"
                                    class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500" />
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-300 mb-2">Phone</label>
-                            <input @bind="currentSupplier.Phone"
-                                   placeholder="+1-555-0000"
-                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500" />
-                        </div>
                     </div>
                     <div class="space-y-5">
                         <div>
@@ -243,6 +247,12 @@
                                        placeholder="Country"
                                        class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500" />
                             </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Phone</label>
+                            <input @bind="currentSupplier.Phone"
+                                   placeholder="+1-555-0000"
+                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500" />
                         </div>
                     </div>
                 </div>
@@ -283,8 +293,9 @@
             <div class="p-6 space-y-5">
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">Supplier</label>
-                    <select class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Select supplier</option>
+                    <select @onchange="OnSupplierChanged"
+                            class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="0">Select supplier</option>
                         @foreach (var s in SupplierList)
                         {
                             <option value="@s.SupplierId">@s.Name</option>
@@ -293,20 +304,31 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">Expected Delivery Date</label>
-                    <input type="date"
+                    <input type="date" @bind="orderExpectedDate"
                            placeholder="dd/mm/yyyy"
                            class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Total Amount ($)</label>
-                    <input type="number"
-                           value="0.00"
-                           disabled
-                           class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500 cursor-not-allowed" />
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Medicine Name</label>
+                    <select @bind="selectedMedicineId"
+                            class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled="@(selectedSupplierId == 0 ? true : false)">
+                        <option value="0">@(selectedSupplierId == 0 ? "Select supplier first" : "Select medicine")</option>
+                        @foreach (var m in FilteredMedicinesBySupplier)
+                        {
+                            <option value="@m.MedicineId">@m.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Quantity</label>
+                    <input type="number" @bind="orderQuantity"
+                           placeholder="Enter quantity"
+                           class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">Notes</label>
-                    <textarea rows="3"
+                    <textarea rows="3" @bind="orderNotes"
                           placeholder="Additional notes or instructions..."
                           class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                 </div>
@@ -333,9 +355,12 @@
     public IJSRuntime JS { get; set; } = default!;
     [Inject]
     public IPurchaseOrderService PurchaseOrderService { get; set; } = default!;
+    [Inject]
+    public IInventoryService InventoryService { get; set; } = default!;
 
     private List<PharmacyManagementSystem.Services.Supplier> SupplierList = new();
     private List<PharmacyManagementSystem.Services.PurchaseOrders> OrderList = new();
+    private List<PharmacyManagementSystem.Services.InventoryItem> AllMedicines = new();
 
     private bool isLoading = true;
     private bool isLoadingOrders = true;
@@ -344,6 +369,13 @@
     private string SearchTerm = "";
     private bool showAddModal = false;
     private bool showCreateOrderModal = false; 
+
+    // Purchase Order Modal Variables
+    private int selectedSupplierId = 0;
+    private int selectedMedicineId = 0;
+    private DateTime? orderExpectedDate;
+    private int orderQuantity;
+    private string orderNotes = "";
 
     private PharmacyManagementSystem.Services.Supplier currentSupplier = new();
     private PharmacyManagementSystem.Services.Supplier? editingSupplier = null;
@@ -357,10 +389,49 @@
                 s.Email.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
                 s.City.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
 
+    // Filter medicines by selected supplier's manufacturer name
+    private IEnumerable<PharmacyManagementSystem.Services.InventoryItem> FilteredMedicinesBySupplier
+    {
+        get
+        {
+            if (selectedSupplierId == 0) 
+            {
+                Console.WriteLine("No supplier selected, returning empty list");
+                return new List<PharmacyManagementSystem.Services.InventoryItem>();
+            }
+
+            var selectedSupplier = SupplierList.FirstOrDefault(s => s.SupplierId == selectedSupplierId);
+            if (selectedSupplier == null) 
+            {
+                Console.WriteLine($"Supplier with ID {selectedSupplierId} not found");
+                return new List<PharmacyManagementSystem.Services.InventoryItem>();
+            }
+
+            Console.WriteLine($"Selected Supplier: {selectedSupplier.Name}");
+            Console.WriteLine($"Total medicines in inventory: {AllMedicines.Count}");
+
+            // Filter medicines where Manufacturer matches Supplier Name
+            var filtered = AllMedicines.Where(m => 
+                m.Manufacturer != null && 
+                m.Manufacturer.Equals(selectedSupplier.Name, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            Console.WriteLine($"Filtered medicines for manufacturer '{selectedSupplier.Name}': {filtered.Count}");
+            
+            foreach (var med in filtered)
+            {
+                Console.WriteLine($"  - {med.Name} (Manufacturer: {med.Manufacturer})");
+            }
+
+            return filtered;
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadSuppliers();
         await LoadOrders();
+        await LoadMedicines();
     }
 
     private async Task LoadSuppliers()
@@ -403,6 +474,20 @@
         }
     }
 
+    private async Task LoadMedicines()
+    {
+        try
+        {
+            AllMedicines = await InventoryService.GetAllInventoryAsync();
+            Console.WriteLine($"Loaded {AllMedicines.Count} medicines from inventory");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading medicines: {ex.Message}");
+            AllMedicines = new List<PharmacyManagementSystem.Services.InventoryItem>();
+        }
+    }
+
     // Opens the Supplier Add/Edit Modal
     private void OpenAddModal()
     {
@@ -416,14 +501,70 @@
     {
         showAddModal = false; 
         showCreateOrderModal = true;
-       
+        selectedSupplierId = 0;
+        selectedMedicineId = 0;
+        orderQuantity = 0;
+        orderExpectedDate = null;
+        orderNotes = "";
+    }
+
+    // Handle supplier selection change
+    private void OnSupplierChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int supplierId))
+        {
+            selectedSupplierId = supplierId;
+            selectedMedicineId = 0; // Reset medicine selection
+            StateHasChanged(); // Force UI update
+        }
     }
 
     private async Task SavePurchaseOrder()
     {
-        JS.InvokeVoidAsync("alert", "Purchase Order creation initiated. (Needs implementation to save to DB)");
-        showCreateOrderModal = false;
-        await LoadOrders();
+        if (selectedSupplierId == 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Please select a supplier.");
+            return;
+        }
+        if (selectedMedicineId == 0)
+        {
+             await JS.InvokeVoidAsync("alert", "Please select a medicine.");
+             return;
+        }
+        if (orderQuantity <= 0)
+        {
+             await JS.InvokeVoidAsync("alert", "Please enter a valid quantity.");
+             return;
+        }
+
+        try 
+        {
+            var newOrder = new PharmacyManagementSystem.Services.PurchaseOrders
+            {
+                SupplierId = selectedSupplierId,
+                ExpectedDate = orderExpectedDate,
+                Items = new List<PharmacyManagementSystem.Services.PurchaseOrderItem>
+                {
+                    new PharmacyManagementSystem.Services.PurchaseOrderItem
+                    {
+                        MedicineId = selectedMedicineId,
+                        QuantityOrdered = orderQuantity
+                    }
+                }
+            };
+            
+            await PurchaseOrderService.CreateOrderAsync(newOrder);
+            
+            await JS.InvokeVoidAsync("alert", "Purchase Order created successfully!");
+            showCreateOrderModal = false;
+            
+            await LoadOrders();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating order: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Failed to create order: {ex.Message}");
+        }
     }
 
     private void OpenEditModal(PharmacyManagementSystem.Services.Supplier supplier)
@@ -490,6 +631,23 @@
         {
             Console.WriteLine($"Error deleting supplier: {ex.Message}");
             await JS.InvokeVoidAsync("alert", $"Error deleting supplier: {ex.Message}");
+        }
+    }
+    private async Task MarkOrderReceived(int orderId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", $"Mark Order #{orderId} as Received? This will update inventory.");
+        if (!confirmed) return;
+
+        try
+        {
+            await PurchaseOrderService.UpdateOrderStatusAsync(orderId, "Received");
+            await JS.InvokeVoidAsync("alert", $"Order #{orderId} marked as Received!");
+            await LoadOrders();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating order: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Error updating order: {ex.Message}");
         }
     }
 }

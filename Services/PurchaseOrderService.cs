@@ -115,7 +115,7 @@ namespace PharmacyManagementSystem.Services
                     SELECT 
                         poi.PurchaseOrderItemId, poi.MedicineId, poi.QuantityOrdered, 
                         poi.UnitPrice, poi.LineTotal, m.Name AS MedicineName
-                    FROM [PurchaseOrderItem] poi
+                    FROM [PurchaseOrderItems] poi
                     JOIN [Medicines] m ON poi.MedicineId = m.MedicineId
                     WHERE poi.PurchaseOrderId = @PurchaseOrderId";
 
@@ -197,5 +197,190 @@ namespace PharmacyManagementSystem.Services
 				_ => (new DateTime(now.Year, now.Month, 1), new DateTime(now.Year, now.Month, 1).AddMonths(1))
 			};
 		}
+
+		public async Task CreateOrderAsync(PurchaseOrders order)
+		{
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var transaction = connection.BeginTransaction())
+				{
+					try
+					{
+						// 1. Calculate Totals based on Items
+						decimal totalOrderAmount = 0;
+						foreach (var item in order.Items)
+						{
+							// Get Price from Medicines table
+							string priceSql = "SELECT Price FROM Medicines WHERE MedicineId = @Mid";
+							using (var pCmd = new SqlCommand(priceSql, connection, transaction))
+							{
+								pCmd.Parameters.AddWithValue("@Mid", item.MedicineId);
+								var result = await pCmd.ExecuteScalarAsync();
+								if (result != null && result != DBNull.Value)
+								{
+									item.UnitPrice = Convert.ToDecimal(result);
+								}
+								else 
+								{
+									item.UnitPrice = 0; 
+								}
+							}
+							item.LineTotal = item.QuantityOrdered * item.UnitPrice;
+							totalOrderAmount += item.LineTotal;
+						}
+						
+						order.TotalAmount = totalOrderAmount;
+						order.Status = "Pending";
+						order.OrderDate = DateTime.Now;
+
+						// 2. Insert Order Header
+						string insertOrderSql = @"
+							INSERT INTO PurchaseOrders (SupplierId, OrderDate, ExpectedDate, TotalAmount, Status)
+							VALUES (@SupplierId, @OrderDate, @ExpectedDate, @TotalAmount, @Status);
+							SELECT SCOPE_IDENTITY();";
+
+						int newOrderId;
+						using (var cmd = new SqlCommand(insertOrderSql, connection, transaction))
+						{
+							cmd.Parameters.AddWithValue("@SupplierId", order.SupplierId);
+							cmd.Parameters.AddWithValue("@OrderDate", order.OrderDate);
+							cmd.Parameters.AddWithValue("@ExpectedDate", (object)order.ExpectedDate ?? DBNull.Value);
+							cmd.Parameters.AddWithValue("@TotalAmount", order.TotalAmount);
+							cmd.Parameters.AddWithValue("@Status", order.Status);
+							
+							newOrderId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+						}
+
+						// 3. Insert Items
+						string insertItemSql = @"
+							INSERT INTO PurchaseOrderItems (PurchaseOrderId, MedicineId, QuantityOrdered, UnitPrice)
+							VALUES (@PurchaseOrderId, @MedicineId, @QuantityOrdered, @UnitPrice)";
+
+						foreach (var item in order.Items)
+						{
+							using (var cmd = new SqlCommand(insertItemSql, connection, transaction))
+							{
+								cmd.Parameters.AddWithValue("@PurchaseOrderId", newOrderId);
+								cmd.Parameters.AddWithValue("@MedicineId", item.MedicineId);
+								cmd.Parameters.AddWithValue("@QuantityOrdered", item.QuantityOrdered);
+								cmd.Parameters.AddWithValue("@UnitPrice", item.UnitPrice);
+								await cmd.ExecuteNonQueryAsync();
+							}
+						}
+
+						transaction.Commit();
+					}
+					catch
+					{
+						transaction.Rollback();
+						throw;
+					}
+				}
+			}
+		}
+
+		public async Task UpdateOrderStatusAsync(int purchaseOrderId, string newStatus)
+		{
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var transaction = connection.BeginTransaction())
+				{
+					try
+					{
+						// Update Status
+						string updateSql = "UPDATE PurchaseOrders SET Status = @Status WHERE PurchaseOrderId = @Id";
+						using (var cmd = new SqlCommand(updateSql, connection, transaction))
+						{
+							cmd.Parameters.AddWithValue("@Status", newStatus);
+							cmd.Parameters.AddWithValue("@Id", purchaseOrderId);
+							await cmd.ExecuteNonQueryAsync();
+						}
+
+						// If Received/Completed, update Stock
+						if (newStatus == "Received" || newStatus == "Completed")
+						{
+							// Get Items
+							string getItemsSql = "SELECT MedicineId, QuantityOrdered FROM PurchaseOrderItems WHERE PurchaseOrderId = @Id";
+							var items = new List<(int MedId, int Qty)>();
+							using (var cmd = new SqlCommand(getItemsSql, connection, transaction))
+							{
+								cmd.Parameters.AddWithValue("@Id", purchaseOrderId);
+								using (var reader = await cmd.ExecuteReaderAsync())
+								{
+									while (await reader.ReadAsync())
+									{
+										items.Add((reader.GetInt32(0), reader.GetInt32(1)));
+									}
+								}
+							}
+
+							// Update Stock
+							string updateStockSql = "UPDATE Medicines SET Quantity = Quantity + @Qty WHERE MedicineId = @Mid";
+							foreach (var item in items)
+							{
+								using (var cmd = new SqlCommand(updateStockSql, connection, transaction))
+								{
+									cmd.Parameters.AddWithValue("@Qty", item.Qty);
+									cmd.Parameters.AddWithValue("@Mid", item.MedId);
+									await cmd.ExecuteNonQueryAsync();
+								}
+							}
+						}
+
+						transaction.Commit();
+					}
+					catch
+					{
+						transaction.Rollback();
+						throw;
+					}
+				}
+			}
+		}
+
+        public async Task<List<PurchaseItemReportDto>> GetPurchaseItemsReportAsync(DateTime startDate, DateTime endDate)
+        {
+            var list = new List<PurchaseItemReportDto>();
+            string sql = @"
+                SELECT 
+                    s.Name AS SupplierName,
+                    m.Name AS MedicineName,
+                    SUM(poi.LineTotal) as TotalCost,
+                    SUM(poi.QuantityOrdered) as TotalQty
+                FROM PurchaseOrders po
+                JOIN PurchaseOrderItems poi ON po.PurchaseOrderId = poi.PurchaseOrderId
+                JOIN Suppliers s ON po.SupplierId = s.SupplierId
+                JOIN Medicines m ON poi.MedicineId = m.MedicineId
+                WHERE po.OrderDate >= @StartDate AND po.OrderDate < @EndDate
+                GROUP BY s.Name, m.Name";
+
+            try 
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+                using var command = new SqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@StartDate", startDate);
+                command.Parameters.AddWithValue("@EndDate", endDate);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new PurchaseItemReportDto
+                    {
+                        SupplierName = reader.GetString(reader.GetOrdinal("SupplierName")),
+                        MedicineName = reader.GetString(reader.GetOrdinal("MedicineName")),
+                        TotalCost = reader.GetDecimal(reader.GetOrdinal("TotalCost")),
+                        Quantity = reader.GetInt32(reader.GetOrdinal("TotalQty"))
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching purchase item report: {ex.Message}");
+            }
+            return list;
+        }
 	}
 }

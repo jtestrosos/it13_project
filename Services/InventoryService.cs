@@ -36,6 +36,7 @@ namespace PharmacyManagementSystem.Services
 					Price,
 					ExpiryDate
 				FROM dbo.Medicines
+				WHERE IsDeleted = 0
 				ORDER BY Name";
 
 			using var connection = new SqlConnection(_connectionString);
@@ -212,7 +213,7 @@ namespace PharmacyManagementSystem.Services
 		// -----------------------------------------------------------------
 		public async Task<bool> DeleteInventoryItemAsync(int medicineId)
 		{
-			string sql = "DELETE FROM dbo.Medicines WHERE MedicineId = @MedicineId";
+			string sql = "UPDATE dbo.Medicines SET IsDeleted = 1 WHERE MedicineId = @MedicineId";
 
 			using var connection = new SqlConnection(_connectionString);
 			await connection.OpenAsync();
@@ -232,9 +233,10 @@ namespace PharmacyManagementSystem.Services
 				SELECT
 					COUNT(MedicineId) as TotalItems,
 					ISNULL(SUM(Quantity * Price), 0) as TotalValue,
-					(SELECT COUNT(*) FROM dbo.Medicines WHERE Quantity <= MinQuantity) as LowStockCount,
-					(SELECT COUNT(*) FROM dbo.Medicines WHERE ExpiryDate <= GETDATE()) as ExpiredCount
-				FROM dbo.Medicines";
+					(SELECT COUNT(*) FROM dbo.Medicines WHERE Quantity <= MinQuantity AND IsDeleted = 0) as LowStockCount,
+					(SELECT COUNT(*) FROM dbo.Medicines WHERE ExpiryDate <= GETDATE() AND IsDeleted = 0) as ExpiredCount
+				FROM dbo.Medicines
+				WHERE IsDeleted = 0";
 
 			try
 			{

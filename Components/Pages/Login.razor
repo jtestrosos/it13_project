@@ -47,19 +47,31 @@
                 <!-- Password -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-slate-300 mb-2">Password</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M12 11c0-2.209-1.791-4-4-4s-4 1.791-4 4 1.791 4 4 4m4-4c0-2.209 1.791-4 4-4s4 1.791 4 4-1.791 4-4 4m-4-4v6" />
-                            </svg>
-                        </div>
+                    <div class="relative password-field-wrapper">
                         <InputText @bind-Value="loginModel.Password"
                                    type="password"
-                                   placeholder="Enter your password"
-                                   class="w-full pl-10 pr-3 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" />
+                                   placeholder="     Enter your password"
+                                   class="password-input w-full pl-12 pr-3 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" />
+                        <div class="password-icon absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
                     </div>
                 </div>
+
+                <style>
+                    .password-field-wrapper:has(.password-input:focus) .password-icon,
+                    .password-field-wrapper:has(.password-input:not(:placeholder-shown)) .password-icon {
+                        display: none;
+                    }
+                    
+                    .password-field-wrapper .password-input:focus,
+                    .password-field-wrapper .password-input:not(:placeholder-shown) {
+                        padding-left: 0.75rem !important;
+                    }
+                </style>
 
                 <!-- Remember Me -->
                 <div class="flex items-center mb-6">

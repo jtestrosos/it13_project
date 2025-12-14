@@ -1,11 +1,82 @@
-﻿@using Medicine_ERP.Data.Models.ViewModels
+﻿
 @inherits LayoutComponentBase
 
-<div class="flex h-screen w-screen overflow-hidden bg-slate-900">
-    <!-- Sidebar - Full Height -->
-    <aside class="w-64 bg-slate-800 shadow-lg flex-shrink-0 flex flex-col h-full overflow-hidden">
-        <!-- Logo - Fixed at top -->
-        <div class="flex items-center justify-center h-16 border-b border-slate-700 px-6 flex-shrink-0">
+<style>
+    .dashboard-container {
+        background: var(--bg-primary);
+    }
+
+    .dashboard-sidebar {
+        background: var(--bg-sidebar);
+        border-color: var(--border-color);
+    }
+
+    .dashboard-header {
+        background: var(--bg-header);
+        border-color: var(--border-color);
+    }
+
+    .dashboard-main {
+        background: linear-gradient(to bottom right, var(--bg-gradient-from), var(--bg-gradient-via), var(--bg-gradient-to));
+    }
+
+    .sidebar-header {
+        border-color: var(--border-color);
+    }
+
+    .sidebar-footer {
+        border-color: var(--border-color);
+    }
+
+    .nav-link-item {
+        color: var(--nav-text);
+        border-left: 4px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .nav-link-item:hover {
+        background: var(--nav-hover-bg);
+        color: var(--nav-hover-text);
+        border-left-color: var(--accent-color);
+    }
+
+    .nav-link-active {
+        background: var(--nav-active-bg);
+        color: var(--nav-active-text);
+        border-left-color: var(--accent-color);
+    }
+
+    .text-primary-theme {
+        color: var(--text-primary);
+    }
+
+    .text-secondary-theme {
+        color: var(--text-secondary);
+    }
+
+    .text-tertiary-theme {
+        color: var(--text-tertiary);
+    }
+
+    .notification-panel {
+        background: var(--bg-secondary);
+        border-color: var(--border-color);
+    }
+
+    .notification-item {
+        border-color: var(--border-color);
+    }
+
+    .notification-item:hover {
+        background: var(--nav-hover-bg);
+    }
+</style>
+
+<div class="dashboard-container flex h-screen w-screen overflow-hidden">
+
+    <aside class="dashboard-sidebar w-64 shadow-lg flex-shrink-0 flex flex-col h-full overflow-hidden">
+
+        <div class="sidebar-header flex items-center justify-center h-16 border-b px-6 flex-shrink-0">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -13,31 +84,31 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold text-white">PharmERP</h1>
-                    <p class="text-xs text-slate-400">Pharmacy Management</p>
+                    <h1 class="text-lg font-bold text-primary-theme">PharmERP</h1>
+                    <p class="text-xs text-tertiary-theme">Pharmacy Management</p>
                 </div>
             </div>
         </div>
 
-        <!-- Navigation - Scrollable middle section -->
+
         <nav class="flex-1 overflow-y-auto py-4">
-            <NavLink href="/dashboard" Match="NavLinkMatch.All" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors border-l-4 border-transparent hover:border-emerald-500" ActiveClass="bg-slate-700 text-emerald-400 border-emerald-500">
+            <NavLink href="/dashboard" Match="NavLinkMatch.All" class="nav-link-item flex items-center px-6 py-3" ActiveClass="nav-link-active">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
                 Dashboard
             </NavLink>
 
-            <NavLink href="/inventory" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors border-l-4 border-transparent hover:border-emerald-500" ActiveClass="bg-slate-700 text-emerald-400 border-emerald-500">
+            <NavLink href="/inventory" class="nav-link-item flex items-center px-6 py-3" ActiveClass="nav-link-active">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                 </svg>
                 Medicine Inventory
             </NavLink>
 
-            @if (userRole != "Staff")
+            @if (userRole != "Staff" && userRole != "SuperAdmin")
             {
-            <NavLink href="/suppliers" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors border-l-4 border-transparent hover:border-emerald-500" ActiveClass="bg-slate-700 text-emerald-400 border-emerald-500">
+            <NavLink href="/suppliers" class="nav-link-item flex items-center px-6 py-3" ActiveClass="nav-link-active">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
@@ -45,16 +116,19 @@
             </NavLink>
             }
 
-            <NavLink href="/sales" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors border-l-4 border-transparent hover:border-emerald-500" ActiveClass="bg-slate-700 text-emerald-400 border-emerald-500">
+            @if (userRole != "Admin" && userRole != "SuperAdmin")
+            {
+            <NavLink href="/sales" class="nav-link-item flex items-center px-6 py-3" ActiveClass="nav-link-active">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 Sales & Billing
             </NavLink>
+            }
 
             @if (userRole != "Staff")
             {
-            <NavLink href="/staff" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors border-l-4 border-transparent hover:border-emerald-500" ActiveClass="bg-slate-700 text-emerald-400 border-emerald-500">
+            <NavLink href="/staff" class="nav-link-item flex items-center px-6 py-3" ActiveClass="nav-link-active">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -64,7 +138,7 @@
 
             @if (userRole != "Staff")
             {
-            <NavLink href="/reports" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors border-l-4 border-transparent hover:border-emerald-500" ActiveClass="bg-slate-700 text-emerald-400 border-emerald-500">
+            <NavLink href="/reports" class="nav-link-item flex items-center px-6 py-3" ActiveClass="nav-link-active">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
@@ -74,11 +148,21 @@
 
             @if (userRole == "SuperAdmin")
             {
-            <NavLink href="/roles" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors border-l-4 border-transparent hover:border-emerald-500" ActiveClass="bg-slate-700 text-emerald-400 border-emerald-500">
+            <NavLink href="/roles" class="nav-link-item flex items-center px-6 py-3" ActiveClass="nav-link-active">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 Role Management
+            </NavLink>
+            }
+            
+            @if (userRole == "Admin" || userRole == "SuperAdmin")
+            {
+            <NavLink href="/archives" class="nav-link-item flex items-center px-6 py-3" ActiveClass="nav-link-active">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+                Archives
             </NavLink>
             }
 
@@ -87,15 +171,15 @@
             </div>
         </nav>
 
-        <!-- User Profile - Fixed at bottom -->
-        <div class="border-t border-slate-700 p-4 flex-shrink-0">
+
+        <div class="sidebar-footer border-t p-4 flex-shrink-0">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-semibold">
                     @userInitials
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-slate-300 truncate">@userName</p>
-                    <p class="text-xs text-slate-400 truncate">@userEmail</p>
+                    <p class="text-sm font-medium text-secondary-theme truncate">@userName</p>
+                    <p class="text-xs text-tertiary-theme truncate">@userEmail</p>
                 </div>
                 <button @onclick="HandleLogout" class="p-1.5 text-slate-400 hover:text-slate-300">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,27 +190,32 @@
         </div>
     </aside>
 
-    <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col h-full overflow-hidden">
-        <!-- Top Navigation Bar -->
-        <header class="bg-slate-800 shadow-sm border-b border-slate-700 flex-shrink-0">
-            <div class="flex items-center justify-between px-6 py-4">
-                <div class="flex items-center flex-1">
-                    <!-- Search Bar -->
-                    <div class="relative mx-4 flex-1 max-w-md">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center">
-                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </span>
-                        <input class="w-full pl-10 pr-4 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                               type="search"
-                               placeholder="Search medicines, suppliers, orders...">
-                    </div>
-                </div>
 
-                <!-- Right Side Icons -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+
+        <header class="dashboard-header shadow-sm border-b flex-shrink-0">
+            <div class="flex items-center justify-end px-6 py-4">
+
+
                 <div class="flex items-center space-x-4">
+                    <!-- Theme Toggle Button -->
+                    <button @onclick="ToggleTheme" class="relative p-2 text-slate-400 hover:text-slate-300 focus:outline-none transition-all duration-300" title="Toggle theme">
+                        @if (isDarkMode)
+                        {
+                            <!-- Sun Icon for Light Mode -->
+                            <svg class="w-6 h-6 transform transition-transform duration-300 hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <!-- Moon Icon for Dark Mode -->
+                            <svg class="w-6 h-6 transform transition-transform duration-300 hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                        }
+                    </button>
+
                     <div class="relative">
                         <button @onclick="ToggleNotifications" class="relative p-2 text-slate-400 hover:text-slate-300 focus:outline-none">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,13 +227,13 @@
                             }
                         </button>
 
-                        <!-- Notification Dropdown -->
+
                         @if (showNotifications)
                         {
-                            <div class="absolute right-0 mt-2 w-80 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 z-50 max-h-96 overflow-hidden flex flex-col">
-                                <div class="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-                                    <h3 class="text-sm font-semibold text-white">Notifications</h3>
-                                    <span class="text-xs text-slate-400">@notificationCount alerts</span>
+                            <div class="notification-panel absolute right-0 mt-2 w-80 rounded-xl shadow-2xl border z-50 max-h-96 overflow-hidden flex flex-col">
+                                <div class="px-4 py-3 border-b notification-item flex items-center justify-between">
+                                    <h3 class="text-sm font-semibold text-primary-theme">Notifications</h3>
+                                    <span class="text-xs text-tertiary-theme">@notificationCount alerts</span>
                                 </div>
                                 
                                 <div class="overflow-y-auto flex-1">
@@ -152,7 +241,7 @@
                                     {
                                         @foreach (var notification in notifications)
                                         {
-                                            <div class="px-4 py-3 border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
+                                            <div class="notification-item px-4 py-3 border-b transition-colors">
                                                 <div class="flex items-start space-x-3">
                                                     <div class="flex-shrink-0">
                                                         @if (notification.Type == "LowStock")
@@ -173,8 +262,8 @@
                                                         }
                                                     </div>
                                                     <div class="flex-1 min-w-0">
-                                                        <p class="text-sm font-medium text-white">@notification.Title</p>
-                                                        <p class="text-xs text-slate-400 mt-1">@notification.Message</p>
+                                                        <p class="text-sm font-medium text-primary-theme">@notification.Title</p>
+                                                        <p class="text-xs text-tertiary-theme mt-1">@notification.Message</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -197,8 +286,8 @@
             </div>
         </header>
 
-        <!-- Page Content - Scrollable -->
-        <main class="flex-1 overflow-y-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+
+        <main class="dashboard-main flex-1 overflow-y-auto">
             @Body
         </main>
     </div>
@@ -217,6 +306,7 @@
     private bool showBadge = false;
     private int notificationCount = 0;
     private List<NotificationItem> notifications = new();
+    private bool isDarkMode = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -225,14 +315,17 @@
             userRole = await JS.InvokeAsync<string>("localStorage.getItem", "userRole") ?? "Staff";
             userEmail = await JS.InvokeAsync<string>("localStorage.getItem", "userEmail") ?? "";
             
-            // Extract name from email or use default
+            // Get current theme
+            var currentTheme = await JS.InvokeAsync<string>("getCurrentTheme");
+            isDarkMode = currentTheme == "dark";
+
             if (!string.IsNullOrEmpty(userEmail))
             {
                 userName = userEmail.Split('@')[0];
                 userInitials = userName.Length >= 2 ? userName.Substring(0, 2).ToUpper() : "U";
             }
 
-            // Load notifications
+
             await LoadNotifications();
         }
         catch
@@ -247,7 +340,7 @@
         {
             notifications.Clear();
 
-            // Get low stock items
+
             var lowStockItems = await InventoryService.GetLowStockItemsAsync();
             foreach (var item in lowStockItems.Take(5))
             {
@@ -259,7 +352,7 @@
                 });
             }
 
-            // Get inventory stats for expiring items
+
             var stats = await InventoryService.GetInventoryStatsAsync();
             if (stats.ExpiredCount > 0)
             {
@@ -279,6 +372,13 @@
             Console.WriteLine($"Error loading notifications: {ex.Message}");
             notificationCount = 0;
         }
+    }
+
+    private async Task ToggleTheme()
+    {
+        var newTheme = await JS.InvokeAsync<string>("toggleTheme");
+        isDarkMode = newTheme == "dark";
+        StateHasChanged();
     }
 
     private void ToggleNotifications()

@@ -138,5 +138,48 @@ namespace PharmacyManagementSystem.Services
 				}
 			}
 		}
+	
+
+		// --- UPDATE SHIFT (UPDATE) ---
+		public async Task UpdateShiftAsync(Shift shift)
+		{
+			string sql = @"
+				UPDATE [Shifts] 
+				SET StaffId = @StaffId, 
+					ShiftDate = @ShiftDate, 
+					StartTime = @StartTime, 
+					EndTime = @EndTime
+				WHERE ShiftId = @ShiftId";
+
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var command = new SqlCommand(sql, connection))
+				{
+					command.Parameters.AddWithValue("@ShiftId", shift.ShiftId);
+					command.Parameters.AddWithValue("@StaffId", shift.StaffId);
+					command.Parameters.AddWithValue("@ShiftDate", shift.Date.Date);
+					command.Parameters.AddWithValue("@StartTime", shift.StartTime.ToString());
+					command.Parameters.AddWithValue("@EndTime", shift.EndTime.ToString());
+					await command.ExecuteNonQueryAsync();
+				}
+			}
+		}
+
+		// --- DELETE SHIFT (DELETE) ---
+		public async Task DeleteShiftAsync(int shiftId)
+		{
+			string sql = "DELETE FROM [Shifts] WHERE ShiftId = @ShiftId";
+
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var command = new SqlCommand(sql, connection))
+				{
+					command.Parameters.AddWithValue("@ShiftId", shiftId);
+					await command.ExecuteNonQueryAsync();
+				}
+			}
+		}
 	}
 }

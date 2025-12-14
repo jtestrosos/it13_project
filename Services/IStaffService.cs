@@ -37,5 +37,7 @@ namespace PharmacyManagementSystem.Services
 		Task<List<Shift>> GetAllShiftsAsync();
 		Task AddStaffAsync(Staff member);
 		Task AddShiftAsync(Shift shift);
+		Task UpdateShiftAsync(Shift shift);
+		Task DeleteShiftAsync(int shiftId);
 	}
 }

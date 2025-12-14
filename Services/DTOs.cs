@@ -23,5 +23,20 @@ namespace PharmacyManagementSystem.Services
 		public int StockDifference { get; set; } 
 	}
 
+	public class StockInTransaction
+	{
+		public int MedicineId { get; set; }
+		public int Quantity { get; set; }
+		public DateTime DeliveryDate { get; set; } = DateTime.Today;
+		public DateTime ExpiryDate { get; set; } = DateTime.Today.AddYears(1);
+	}
+
+	public class StockOutTransaction
+	{
+		public int MedicineId { get; set; }
+		public int Quantity { get; set; }
+		public string Reason { get; set; } = "Damaged";
+	}
+
 	
 }

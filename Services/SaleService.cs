@@ -49,7 +49,76 @@ namespace PharmacyManagementSystem.Services
 			decimal discountAmount,
 			decimal amountPaid)
 		{
-			await Task.CompletedTask;
+			using var connection = new SqlConnection(_connectionString);
+			await connection.OpenAsync();
+
+			using var transaction = connection.BeginTransaction();
+
+			try
+			{
+				// 1. Insert into Sales Output inserted.SaleId
+				string sqlSale = @"
+					INSERT INTO Sales (SaleDate, PaymentMethod, SubTotal, DiscountAmount, TotalAmount, AmountPaid)
+					OUTPUT INSERTED.SaleId
+					VALUES (@SaleDate, @PaymentMethod, @SubTotal, @DiscountAmount, @TotalAmount, @AmountPaid)";
+
+				int saleId;
+				decimal subTotal = totalAmount + discountAmount;
+				// decimal change = amountPaid - totalAmount; // Change is computed by DB
+
+				using (var command = new SqlCommand(sqlSale, connection, transaction))
+				{
+					command.Parameters.AddWithValue("@SaleDate", DateTime.Now);
+					command.Parameters.AddWithValue("@PaymentMethod", paymentMethod);
+					command.Parameters.AddWithValue("@SubTotal", subTotal);
+					command.Parameters.AddWithValue("@DiscountAmount", discountAmount);
+					command.Parameters.AddWithValue("@TotalAmount", totalAmount);
+					command.Parameters.AddWithValue("@AmountPaid", amountPaid);
+					// command.Parameters.AddWithValue("@ChangeGiven", change); // Computed
+
+					saleId = (int)await command.ExecuteScalarAsync();
+				}
+
+				// 2. Insert Sale Items and Update Inventory
+				string sqlItem = @"
+					INSERT INTO SaleItems (SaleId, MedicineId, Quantity, UnitPrice, DiscountPct)
+					VALUES (@SaleId, @MedicineId, @Quantity, @UnitPrice, @DiscountPct)";
+
+				string sqlUpdateStock = @"
+					UPDATE Medicines 
+					SET Quantity = Quantity - @Quantity 
+					WHERE MedicineId = @MedicineId";
+
+				foreach (var item in cartItems)
+				{
+					// Add Line Item
+					using (var cmdItem = new SqlCommand(sqlItem, connection, transaction))
+					{
+						cmdItem.Parameters.AddWithValue("@SaleId", saleId);
+						cmdItem.Parameters.AddWithValue("@MedicineId", item.Medicine.MedicineId);
+						cmdItem.Parameters.AddWithValue("@Quantity", item.Quantity);
+						cmdItem.Parameters.AddWithValue("@UnitPrice", item.Medicine.Price);
+						cmdItem.Parameters.AddWithValue("@DiscountPct", item.DiscountPercent);
+						// cmdItem.Parameters.AddWithValue("@LineTotal", item.Total); // Computed
+						await cmdItem.ExecuteNonQueryAsync();
+					}
+
+					// Update Stock
+					using (var cmdStock = new SqlCommand(sqlUpdateStock, connection, transaction))
+					{
+						cmdStock.Parameters.AddWithValue("@Quantity", item.Quantity);
+						cmdStock.Parameters.AddWithValue("@MedicineId", item.Medicine.MedicineId);
+						await cmdStock.ExecuteNonQueryAsync();
+					}
+				}
+
+				transaction.Commit();
+			}
+			catch
+			{
+				transaction.Rollback();
+				throw;
+			}
 		}
 
 		// -----------------------------------------------------------------
@@ -71,7 +140,8 @@ namespace PharmacyManagementSystem.Services
 					m.Name AS MedicineName
 				FROM dbo.Sales s
 				JOIN dbo.SaleItems si ON s.SaleId = si.SaleId
-				JOIN dbo.Medicines m ON si.MedicineId = m.MedicineId
+				LEFT JOIN dbo.Medicines m ON si.MedicineId = m.MedicineId
+				WHERE s.IsDeleted = 0
 				ORDER BY s.SaleDate DESC, s.SaleId DESC";
 
 			var allSaleData = new List<(
@@ -256,7 +326,7 @@ namespace PharmacyManagementSystem.Services
 			string sql = @"
 				SELECT 
 					ISNULL(m.Category, 'Uncategorized') as Category,
-					ISNULL(SUM(si.Quantity * si.UnitPrice * (1 - si.DiscountPercent/100.0)), 0) as TotalValue
+					ISNULL(SUM(si.Quantity * si.UnitPrice * (1 - si.DiscountPct/100.0)), 0) as TotalValue
 				FROM SaleItems si
 				JOIN Medicines m ON si.MedicineId = m.MedicineId
 				JOIN Sales s ON si.SaleId = s.SaleId
@@ -393,6 +463,294 @@ namespace PharmacyManagementSystem.Services
 				"Yearly" => (new DateTime(now.Year, 1, 1), new DateTime(now.Year + 1, 1, 1)),
 				_ => (new DateTime(now.Year, now.Month, 1), new DateTime(now.Year, now.Month, 1).AddMonths(1))
 			};
+		}
+
+		// -----------------------------------------------------------------
+		// Update Sale (Edit)
+		// -----------------------------------------------------------------
+		public async Task UpdateSaleAsync(
+			int saleId,
+			List<Medicine_ERP_Desktop.Components.Pages.Sales.CartItem> cartItems,
+			string paymentMethod,
+			decimal totalAmount,
+			decimal discountAmount,
+			decimal amountPaid)
+		{
+			using var connection = new SqlConnection(_connectionString);
+			await connection.OpenAsync();
+
+			using var transaction = connection.BeginTransaction();
+
+			try
+			{
+				// 1. RESTORE STOCK for existing items
+				// We need to fetch existing items first to know what to restore
+				string sqlGetOldItems = "SELECT MedicineId, Quantity FROM SaleItems WHERE SaleId = @SaleId";
+				var oldItems = new List<(int MedicineId, int Quantity)>();
+
+				using (var cmdGet = new SqlCommand(sqlGetOldItems, connection, transaction))
+				{
+					cmdGet.Parameters.AddWithValue("@SaleId", saleId);
+					using (var reader = await cmdGet.ExecuteReaderAsync())
+					{
+						while (await reader.ReadAsync())
+						{
+							oldItems.Add((reader.GetInt32(0), reader.GetInt32(1)));
+						}
+					}
+				}
+
+				string sqlRestoreStock = "UPDATE Medicines SET Quantity = Quantity + @Qty WHERE MedicineId = @Mid";
+				foreach (var old in oldItems)
+				{
+					using (var cmdRestore = new SqlCommand(sqlRestoreStock, connection, transaction))
+					{
+						cmdRestore.Parameters.AddWithValue("@Qty", old.Quantity);
+						cmdRestore.Parameters.AddWithValue("@Mid", old.MedicineId);
+						await cmdRestore.ExecuteNonQueryAsync();
+					}
+				}
+
+				// 2. DELETE OLD ITEMS
+				string sqlDeleteItems = "DELETE FROM SaleItems WHERE SaleId = @SaleId";
+				using (var cmdDel = new SqlCommand(sqlDeleteItems, connection, transaction))
+				{
+					cmdDel.Parameters.AddWithValue("@SaleId", saleId);
+					await cmdDel.ExecuteNonQueryAsync();
+				}
+
+				// 3. UPDATE SALE RECORD
+				string sqlUpdateSale = @"
+					UPDATE Sales 
+					SET SaleDate = @SaleDate, 
+						PaymentMethod = @PaymentMethod, 
+						SubTotal = @SubTotal, 
+						DiscountAmount = @DiscountAmount, 
+						TotalAmount = @TotalAmount, 
+						AmountPaid = @AmountPaid
+					WHERE SaleId = @SaleId";
+				
+				decimal subTotal = totalAmount + discountAmount;
+				
+				using (var cmdUpdate = new SqlCommand(sqlUpdateSale, connection, transaction))
+				{
+					cmdUpdate.Parameters.AddWithValue("@SaleDate", DateTime.Now); // Update time to now? Or keep original? Usually update time.
+					cmdUpdate.Parameters.AddWithValue("@PaymentMethod", paymentMethod);
+					cmdUpdate.Parameters.AddWithValue("@SubTotal", subTotal);
+					cmdUpdate.Parameters.AddWithValue("@DiscountAmount", discountAmount);
+					cmdUpdate.Parameters.AddWithValue("@TotalAmount", totalAmount);
+					cmdUpdate.Parameters.AddWithValue("@AmountPaid", amountPaid);
+					cmdUpdate.Parameters.AddWithValue("@SaleId", saleId);
+					await cmdUpdate.ExecuteNonQueryAsync();
+				}
+
+				// 4. INSERT NEW ITEMS & DEDUCT STOCK
+				string sqlItem = @"
+					INSERT INTO SaleItems (SaleId, MedicineId, Quantity, UnitPrice, DiscountPct)
+					VALUES (@SaleId, @MedicineId, @Quantity, @UnitPrice, @DiscountPct)";
+
+				string sqlDeductStock = @"
+					UPDATE Medicines 
+					SET Quantity = Quantity - @Quantity 
+					WHERE MedicineId = @MedicineId";
+
+				foreach (var item in cartItems)
+				{
+					// Insert Item
+					using (var cmdItem = new SqlCommand(sqlItem, connection, transaction))
+					{
+						cmdItem.Parameters.AddWithValue("@SaleId", saleId);
+						cmdItem.Parameters.AddWithValue("@MedicineId", item.Medicine.MedicineId);
+						cmdItem.Parameters.AddWithValue("@Quantity", item.Quantity);
+						cmdItem.Parameters.AddWithValue("@UnitPrice", item.Medicine.Price);
+						cmdItem.Parameters.AddWithValue("@DiscountPct", item.DiscountPercent);
+						await cmdItem.ExecuteNonQueryAsync();
+					}
+
+					// Deduct Stock
+					using (var cmdStock = new SqlCommand(sqlDeductStock, connection, transaction))
+					{
+						cmdStock.Parameters.AddWithValue("@Quantity", item.Quantity);
+						cmdStock.Parameters.AddWithValue("@MedicineId", item.Medicine.MedicineId);
+						await cmdStock.ExecuteNonQueryAsync();
+					}
+				}
+
+				transaction.Commit();
+			}
+			catch
+			{
+				transaction.Rollback();
+				throw;
+			}
+		}
+
+		public async Task<bool> DeleteSaleAsync(int saleId)
+		{
+			try
+			{
+				using var connection = new SqlConnection(_connectionString);
+				await connection.OpenAsync();
+				using var transaction = connection.BeginTransaction();
+
+				try
+				{
+					// 1. RESTORE STOCK BEFORE DELETING
+					string sqlGetOldItems = "SELECT MedicineId, Quantity FROM SaleItems WHERE SaleId = @SaleId";
+					var oldItems = new List<(int MedicineId, int Quantity)>();
+
+					using (var cmdGet = new SqlCommand(sqlGetOldItems, connection, transaction))
+					{
+						cmdGet.Parameters.AddWithValue("@SaleId", saleId);
+						using (var reader = await cmdGet.ExecuteReaderAsync())
+						{
+							while (await reader.ReadAsync())
+							{
+								oldItems.Add((reader.GetInt32(0), reader.GetInt32(1)));
+							}
+						}
+					}
+
+					string sqlRestoreStock = "UPDATE Medicines SET Quantity = Quantity + @Qty WHERE MedicineId = @Mid";
+					foreach (var old in oldItems)
+					{
+						using (var cmdRestore = new SqlCommand(sqlRestoreStock, connection, transaction))
+						{
+							cmdRestore.Parameters.AddWithValue("@Qty", old.Quantity);
+							cmdRestore.Parameters.AddWithValue("@Mid", old.MedicineId);
+							await cmdRestore.ExecuteNonQueryAsync();
+						}
+					}
+
+					// 2. DELETE SALE ITEMS - SKIPPED FOR SOFT DELETE
+					// Items remain in DB but filtered out by parent IsDeleted flag
+
+					// 3. SOFT DELETE SALE (Mark as Archived)
+					string deleteSaleSql = "UPDATE dbo.Sales SET IsDeleted = 1 WHERE SaleId = @SaleId";
+					using (var cmd = new SqlCommand(deleteSaleSql, connection, transaction))
+					{
+						cmd.Parameters.AddWithValue("@SaleId", saleId);
+						int rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+						if (rowsAffected > 0)
+						{
+							transaction.Commit();
+							return true;
+						}
+						else
+						{
+							transaction.Rollback();
+							return false;
+						}
+					}
+				}
+				catch
+				{
+					transaction.Rollback();
+					throw;
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error deleting sale: {ex.Message}");
+				return false;
+			}
+		}
+	
+	
+		// -----------------------------------------------------------------
+		// ARCHIVE / RESTORE
+		// -----------------------------------------------------------------
+		public async Task<List<SaleRecord>> GetArchivedSalesAsync()
+		{
+			string sql = @"
+				SELECT 
+					s.SaleId, s.SaleDate, s.TotalAmount AS TotalSaleAmount,
+					si.Quantity, si.UnitPrice, si.DiscountPct, si.LineTotal AS LineTotalAmount,
+					m.Name AS MedicineName
+				FROM dbo.Sales s
+				JOIN dbo.SaleItems si ON s.SaleId = si.SaleId
+				LEFT JOIN dbo.Medicines m ON si.MedicineId = m.MedicineId
+				WHERE s.IsDeleted = 1
+				ORDER BY s.SaleDate DESC";
+
+			var allData = new List<(int SaleId, DateTime Date, decimal Total, int Qty, decimal Price, decimal Disc, decimal LineTotal, string MedName)>();
+
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var command = new SqlCommand(sql, connection))
+				{
+					using (var reader = await command.ExecuteReaderAsync())
+					{
+						while (await reader.ReadAsync())
+						{
+							allData.Add((
+								reader.GetInt32(0),
+								reader.GetDateTime(1),
+								reader.GetDecimal(2),
+								reader.GetInt32(3),
+								reader.GetDecimal(4),
+								reader.GetDecimal(5),
+								reader.GetDecimal(6),
+								reader.IsDBNull(7) ? "N/A" : reader.GetString(7)
+							));
+						}
+					}
+				}
+			}
+
+			// Group by SaleId
+			var result = allData.GroupBy(x => x.SaleId).Select(g => new SaleRecord
+			{
+				SaleId = g.Key,
+				SaleDate = g.First().Date,
+				TotalSaleAmount = g.First().Total,
+				Items = g.Select(i => new SaleItemRecord
+				{
+					MedicineName = i.MedName,
+					Quantity = i.Qty,
+					UnitPrice = i.Price,
+					DiscountPct = i.Disc,
+					TotalAmount = i.LineTotal
+				}).ToList()
+			}).ToList();
+
+			return result;
+		}
+
+		public async Task RestoreSaleAsync(int saleId)
+		{
+            using var connection = new SqlConnection(_connectionString);
+			await connection.OpenAsync();
+            using var transaction = connection.BeginTransaction();
+            try {
+                // 1. Get Items to deduct stock
+                var items = new List<(int MedId, int Qty)>();
+                string getItems = "SELECT MedicineId, Quantity FROM SaleItems WHERE SaleId = @Id";
+                using(var cmd = new SqlCommand(getItems, connection, transaction)){
+                    cmd.Parameters.AddWithValue("@Id", saleId);
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    while(await reader.ReadAsync()) items.Add((reader.GetInt32(0), reader.GetInt32(1)));
+                }
+
+                // 2. Deduct Stock
+                string updateStock = "UPDATE Medicines SET Quantity = Quantity - @Qty WHERE MedicineId = @Mid";
+                foreach(var item in items){
+                    using var cmd = new SqlCommand(updateStock, connection, transaction);
+                    cmd.Parameters.AddWithValue("@Qty", item.Qty);
+                    cmd.Parameters.AddWithValue("@Mid", item.MedId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // 3. Un-Archive Sale
+                string sql = "UPDATE Sales SET IsDeleted = 0 WHERE SaleId = @Id";
+                using(var cmd = new SqlCommand(sql, connection, transaction)){
+                     cmd.Parameters.AddWithValue("@Id", saleId);
+                     await cmd.ExecuteNonQueryAsync();
+                }
+                transaction.Commit();
+            } catch { transaction.Rollback(); throw; }
 		}
 	}
 }

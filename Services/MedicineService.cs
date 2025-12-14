@@ -34,7 +34,8 @@ namespace PharmacyManagementSystem.Services
                     m.Manufacturer,  
                     s.SupplierId 
                 FROM [Medicines] m 
-                LEFT JOIN [Suppliers] s ON m.Manufacturer = s.Name";
+                LEFT JOIN [Suppliers] s ON m.Manufacturer = s.Name
+                WHERE m.IsDeleted = 0";
 			// Assumes m.Manufacturer column stores the Supplier Name, matching your data model and UI logic.
 
 			using (var connection = new SqlConnection(_connectionString))
@@ -171,8 +172,166 @@ namespace PharmacyManagementSystem.Services
 		// ------------------------------------------
 		public async Task DeleteMedicineAsync(int id)
 		{
-			string sql = "DELETE FROM [Medicines] WHERE MedicineId = @Id";
+			string sql = "UPDATE [Medicines] SET IsDeleted = 1 WHERE MedicineId = @Id";
 
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var command = new SqlCommand(sql, connection))
+				{
+					command.Parameters.AddWithValue("@Id", id);
+					await command.ExecuteNonQueryAsync();
+				}
+			}
+		}
+	
+
+
+		// ------------------------------------------
+		// 6. STOCK IN (ADD STOCK + RECORD TRANSACTION)
+		// ------------------------------------------
+		public async Task AddStockInAsync(StockInTransaction transactionModel)
+		{
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var transaction = connection.BeginTransaction())
+				{
+					try
+					{
+						// 1. Record Transaction
+						string sqlHistory = @"
+							INSERT INTO StockIn (MedicineId, Quantity, DeliveryDate, ExpiryDate)
+							VALUES (@MedicineId, @Quantity, @DeliveryDate, @ExpiryDate)";
+
+						using (var cmd = new SqlCommand(sqlHistory, connection, transaction))
+						{
+							cmd.Parameters.AddWithValue("@MedicineId", transactionModel.MedicineId);
+							cmd.Parameters.AddWithValue("@Quantity", transactionModel.Quantity);
+							cmd.Parameters.AddWithValue("@DeliveryDate", transactionModel.DeliveryDate);
+							cmd.Parameters.AddWithValue("@ExpiryDate", transactionModel.ExpiryDate);
+							await cmd.ExecuteNonQueryAsync();
+						}
+
+						// 2. Update Main Inventory
+						string sqlUpdate = "UPDATE Medicines SET Quantity = Quantity + @Quantity WHERE MedicineId = @MedicineId";
+						using (var cmd = new SqlCommand(sqlUpdate, connection, transaction))
+						{
+							cmd.Parameters.AddWithValue("@Quantity", transactionModel.Quantity);
+							cmd.Parameters.AddWithValue("@MedicineId", transactionModel.MedicineId);
+							await cmd.ExecuteNonQueryAsync();
+						}
+
+						transaction.Commit();
+					}
+					catch
+					{
+						transaction.Rollback();
+						throw;
+					}
+				}
+			}
+		}
+
+		// ------------------------------------------
+		// 7. STOCK OUT (REMOVE STOCK + RECORD TRANSACTION)
+		// ------------------------------------------
+		public async Task AddStockOutAsync(StockOutTransaction transactionModel)
+		{
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var transaction = connection.BeginTransaction())
+				{
+					try
+					{
+						// 1. Record Transaction
+						string sqlHistory = @"
+							INSERT INTO StockOut (MedicineId, Quantity, Reason)
+							VALUES (@MedicineId, @Quantity, @Reason)";
+
+						using (var cmd = new SqlCommand(sqlHistory, connection, transaction))
+						{
+							cmd.Parameters.AddWithValue("@MedicineId", transactionModel.MedicineId);
+							cmd.Parameters.AddWithValue("@Quantity", transactionModel.Quantity);
+							cmd.Parameters.AddWithValue("@Reason", transactionModel.Reason);
+							await cmd.ExecuteNonQueryAsync();
+						}
+
+						// 2. Update Main Inventory
+						string sqlUpdate = "UPDATE Medicines SET Quantity = Quantity - @Quantity WHERE MedicineId = @MedicineId";
+						using (var cmd = new SqlCommand(sqlUpdate, connection, transaction))
+						{
+							cmd.Parameters.AddWithValue("@Quantity", transactionModel.Quantity);
+							cmd.Parameters.AddWithValue("@MedicineId", transactionModel.MedicineId);
+							await cmd.ExecuteNonQueryAsync();
+						}
+
+						transaction.Commit();
+					}
+					catch
+					{
+						transaction.Rollback();
+						throw;
+					}
+				}
+			}
+		}
+
+
+		// ------------------------------------------
+		// 6. ARCHIVE / RESTORE
+		// ------------------------------------------
+		public async Task<List<Medicines>> GetArchivedMedicinesAsync()
+		{
+			var medicines = new List<Medicines>();
+			string sql = @"
+                SELECT 
+                    m.MedicineId, m.Name, m.GenericName, m.Category, m.Quantity, 
+                    m.MinQuantity, m.Price, m.ExpiryDate, m.Batch, m.StorageLocation, 
+                    m.Manufacturer,  
+                    s.SupplierId 
+                FROM [Medicines] m 
+                LEFT JOIN [Suppliers] s ON m.Manufacturer = s.Name
+                WHERE m.IsDeleted = 1";
+
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var command = new SqlCommand(sql, connection))
+				{
+					using (var reader = await command.ExecuteReaderAsync())
+					{
+						while (await reader.ReadAsync())
+						{
+							int supplierIdOrdinal = reader.GetOrdinal("SupplierId");
+							int supplierId = reader.IsDBNull(supplierIdOrdinal) ? 0 : reader.GetInt32(supplierIdOrdinal);
+
+							medicines.Add(new Medicines
+							{
+								MedicineId = reader.GetInt32(reader.GetOrdinal("MedicineId")),
+								Name = reader.GetString(reader.GetOrdinal("Name")),
+								GenericName = reader.GetString(reader.GetOrdinal("GenericName")),
+								Category = reader.GetString(reader.GetOrdinal("Category")),
+								Quantity = reader.GetInt32(reader.GetOrdinal("Quantity")),
+								MinQuantity = reader.GetInt32(reader.GetOrdinal("MinQuantity")),
+								Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+								ExpiryDate = reader.GetDateTime(reader.GetOrdinal("ExpiryDate")),
+								Batch = reader.GetString(reader.GetOrdinal("Batch")),
+								StorageLocation = reader.GetString(reader.GetOrdinal("StorageLocation")),
+								Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+								SupplierId = supplierId
+							});
+						}
+					}
+				}
+			}
+			return medicines;
+		}
+
+		public async Task RestoreMedicineAsync(int id)
+		{
+			string sql = "UPDATE [Medicines] SET IsDeleted = 0 WHERE MedicineId = @Id";
 			using (var connection = new SqlConnection(_connectionString))
 			{
 				await connection.OpenAsync();

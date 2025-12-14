@@ -174,17 +174,24 @@
                                 </button>
                             </div>
 
-                            <ApexChart @ref="categoryChart"
+                            @if (categoryData != null && categoryData.Any() && categoryData.Any(c => c.Value > 0))
+                            {
+                                <ApexChart @ref="categoryChart"
                                                            TItem="CategoryData"
                                                            Options="categoryOptions"
                                                            Height="320">
-                                <ApexPointSeries TItem="CategoryData"
+                                    <ApexPointSeries TItem="CategoryData"
                                                                          Items="categoryData"
                                                                          Name="Sales"
                                                                          SeriesType="SeriesType.Pie"
                                                                          XValue="e => e.Category"
                                                                          YValue="e => (decimal)e.Value" />
-                            </ApexChart>
+                                </ApexChart>
+                            }
+                            else
+                            {
+                                <div class="text-center text-slate-500 py-10">No data</div>
+                            }
                         </div>
                     </div>
 
@@ -263,10 +270,13 @@
                     @* Purchase Chart *@
                      <div class="bg-slate-900/50 p-6 rounded-xl border border-slate-700/50 mt-6">
                         <h4 class="text-white font-medium mb-4">Purchase by Supplier</h4>
-                        @if (purchasePoints.Any())
+                        @if (purchaseChartSeries.Any())
                         {
                             <ApexChart @ref="purchaseChart" TItem="ChartPoint" Options="purchaseOptions" Height="400">
-                                <ApexPointSeries TItem="ChartPoint" Items="purchasePoints" Name="Purchase Amount ($)" SeriesType="SeriesType.Bar" XValue="@(e => e.X)" YValue="@(e => e.Y)" Color="#3B82F6" />
+                                @foreach (var series in purchaseChartSeries)
+                                {
+                                    <ApexPointSeries TItem="ChartPoint" Items="series.Data" Name="@series.Name" SeriesType="SeriesType.Bar" XValue="@(e => e.X)" YValue="@(e => e.Y)" />
+                                }
                             </ApexChart>
                         }
                          else 
@@ -332,6 +342,8 @@
     private ApexChart<CategoryData>? categoryChart;
     private ApexChart<ChartPoint>? inventoryChart;
     private ApexChart<ChartPoint>? purchaseChart;
+    private List<PurchaseSeriesData> purchaseChartSeries = new();
+    private List<string> purchaseChartCategories = new();
 
     private List<ChartPoint> revenuePoints = new();
     private List<ChartPoint> profitPoints = new();
@@ -406,9 +418,42 @@
             recentPurchases = await PurchaseService.GetAllOrdersAsync();
 
             // Purchase Charts Data
-            purchasePoints = recentPurchases.GroupBy(p => p.SupplierName)
-                .Select(g => new ChartPoint { X = g.Key, Y = g.Sum(p => p.TotalAmount) })
-                .OrderByDescending(x => x.Y).Take(10).ToList();
+            // Purchase Charts Data - Stacked by Item (Top 5 Medicines)
+            var purchaseRaw = await PurchaseService.GetPurchaseItemsReportAsync(startDate, endDate);
+            
+            // 1. Identify Top 5 Medicines by Value
+            var topMedicines = purchaseRaw.GroupBy(x => x.MedicineName)
+                                          .OrderByDescending(g => g.Sum(x => x.TotalCost))
+                                          .Take(5)
+                                          .Select(g => g.Key)
+                                          .ToList();
+            
+            // 2. Identify All Suppliers involved with these medicines (or all suppliers period?)
+            // Let's take top 10 suppliers by total value to avoid clutter
+            var topSuppliers = purchaseRaw.GroupBy(x => x.SupplierName)
+                                          .OrderByDescending(g => g.Sum(x => x.TotalCost))
+                                          .Take(10)
+                                          .Select(g => g.Key)
+                                          .ToList();
+            
+            purchaseChartCategories = topSuppliers;
+
+            // 3. Build Series
+            purchaseChartSeries = new();
+            foreach (var med in topMedicines)
+            {
+                var points = new List<ChartPoint>();
+                foreach (var sup in topSuppliers)
+                {
+                    // Find cost for this med/sup pair
+                    var val = purchaseRaw.FirstOrDefault(x => x.MedicineName == med && x.SupplierName == sup)?.TotalCost ?? 0;
+                    points.Add(new ChartPoint { X = sup, Y = val });
+                }
+                purchaseChartSeries.Add(new PurchaseSeriesData { Name = med, Data = points });
+            }
+            
+            // Allow empty series if no data, logic handles it
+            purchasePoints = new(); // Clear old points just in case (though not used for chart anymore)
 
             // GROUP BY DATE LABEL
             var grouped = salesData
@@ -477,17 +522,21 @@
         purchaseOptions = new()
         {
             Theme = new Theme { Mode = Mode.Dark },
-            Chart = new Chart { ForeColor = "#CBD5E0", Background = "transparent" },
-            Xaxis = new XAxis { Categories = purchasePoints.Select(p => p.X).ToList(), Labels = new XAxisLabels { Style = new AxisLabelStyle { Colors = "#CBD5E0" } } },
-            PlotOptions = new PlotOptions { Bar = new PlotOptionsBar { Horizontal = true } },
-            DataLabels = new DataLabels { Enabled = true },
-            Grid = new Grid { Show = true }
+            Chart = new Chart { ForeColor = "#CBD5E0", Background = "transparent", Stacked = true },
+            Xaxis = new XAxis { Categories = purchaseChartCategories, Labels = new XAxisLabels { Style = new AxisLabelStyle { Colors = "#CBD5E0" } } },
+            PlotOptions = new PlotOptions { Bar = new PlotOptionsBar { Horizontal = false } },
+            DataLabels = new DataLabels { Enabled = false },
+            Grid = new Grid { Show = true },
+            Legend = new Legend { Position = LegendPosition.Bottom, Labels = new LegendLabels { Colors = "#CBD5E0" } }
         };
 
         if (revenueChart != null) await revenueChart.RenderAsync();
+
         if (categoryChart != null) await categoryChart.RenderAsync();
         if (inventoryChart != null) await inventoryChart.RenderAsync();
         if (purchaseChart != null) await purchaseChart.RenderAsync();
+
+        StateHasChanged();
     }
 
     // -----------------------------------------------------------------
@@ -573,9 +622,15 @@
     // public class SaleReportEntry { ... }
     // public class CategoryData { ... }
 
-    public class ChartPoint
+    public class ChartPoint
     {
         public string X { get; set; } = "";
         public decimal Y { get; set; }
+    }
+
+    public class PurchaseSeriesData
+    {
+        public string Name { get; set; } = "";
+        public List<ChartPoint> Data { get; set; } = new();
     }
 }

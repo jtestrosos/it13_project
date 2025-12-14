@@ -33,7 +33,16 @@ namespace PharmacyManagementSystem.Services
 		Task UpdateMedicineAsync(Medicines medicine);
 		Task DeleteMedicineAsync(int id);
 
+
 		// Helper method (Required by Inventory.razor for the modal)
 		Task<List<Supplier>> GetAllSuppliersAsync();
+		
+		// Stock Management
+		Task AddStockInAsync(StockInTransaction transaction);
+		Task AddStockOutAsync(StockOutTransaction transaction);
+		
+		// Archive / Restore
+		Task<List<Medicines>> GetArchivedMedicinesAsync();
+		Task RestoreMedicineAsync(int id);
 	}
 }

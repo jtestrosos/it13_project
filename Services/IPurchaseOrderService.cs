@@ -35,5 +35,16 @@ namespace PharmacyManagementSystem.Services
 		Task<List<PurchaseOrders>> GetAllOrdersAsync();
 		Task<PurchaseOrders> GetOrderDetailsAsync(int purchaseOrderId);
 		Task<PurchaseStats> GetPurchaseStatsAsync(string period = "Monthly");
+		Task CreateOrderAsync(PurchaseOrders order);
+		Task UpdateOrderStatusAsync(int purchaseOrderId, string newStatus);
+        Task<List<PurchaseItemReportDto>> GetPurchaseItemsReportAsync(DateTime startDate, DateTime endDate);
 	}
+
+    public class PurchaseItemReportDto
+    {
+        public string SupplierName { get; set; } = "";
+        public string MedicineName { get; set; } = "";
+        public decimal TotalCost { get; set; }
+        public int Quantity { get; set; }
+    }
 }

@@ -1,0 +1,215 @@
+@page "/archives"
+@using PharmacyManagementSystem.Services
+@inject IMedicineService MedicineService
+@inject ISupplierService SupplierService
+@inject ISaleService SaleService
+@inject IJSRuntime JS
+
+<div class="h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Archives</h1>
+            <p class="text-slate-400 mt-1">View and restore deleted items.</p>
+        </div>
+    </div>
+
+    <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+        <div class="border-b border-slate-700/50">
+            <nav class="flex -mb-px">
+                <button @onclick='() => activeTab = "medicines"' 
+                        class="@(activeTab == "medicines" ? "border-blue-500 text-blue-400" : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600") flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition-colors">
+                    Medicines
+                </button>
+                <button @onclick='() => activeTab = "suppliers"' 
+                        class="@(activeTab == "suppliers" ? "border-blue-500 text-blue-400" : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600") flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition-colors">
+                    Suppliers
+                </button>
+                <button @onclick='() => activeTab = "sales"' 
+                        class="@(activeTab == "sales" ? "border-blue-500 text-blue-400" : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600") flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition-colors">
+                    Sales
+                </button>
+            </nav>
+        </div>
+        
+        @if (activeTab == "medicines")
+        {
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-700">
+                    <thead class="bg-slate-700/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Category</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Price</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Stock</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-slate-800/30 divide-y divide-slate-700">
+                        @if (archivedMedicines == null)
+                        {
+                            <tr><td colspan="5" class="px-6 py-4 text-center text-slate-400">Loading...</td></tr>
+                        }
+                        else if (!archivedMedicines.Any())
+                        {
+                            <tr><td colspan="5" class="px-6 py-4 text-center text-slate-500">No archived medicines found.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var med in archivedMedicines)
+                            {
+                                <tr class="hover:bg-slate-700/50 transition-colors">
+                                    <td class="px-6 py-4 text-sm font-medium text-white">@med.Name</td>
+                                    <td class="px-6 py-4 text-sm text-slate-300">@med.Category</td>
+                                    <td class="px-6 py-4 text-sm text-slate-300">$@med.Price</td>
+                                    <td class="px-6 py-4 text-sm text-slate-300">@med.Quantity</td>
+                                    <td class="px-6 py-4 text-sm font-medium">
+                                        <button @onclick="() => RestoreMedicine(med)" class="text-emerald-400 hover:text-emerald-300">Restore</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (activeTab == "suppliers")
+        {
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-700">
+                    <thead class="bg-slate-700/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Contact</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-slate-800/30 divide-y divide-slate-700">
+                        @if (archivedSuppliers == null)
+                        {
+                            <tr><td colspan="4" class="px-6 py-4 text-center text-slate-400">Loading...</td></tr>
+                        }
+                        else if (!archivedSuppliers.Any())
+                        {
+                            <tr><td colspan="4" class="px-6 py-4 text-center text-slate-500">No archived suppliers found.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var sup in archivedSuppliers)
+                            {
+                                <tr class="hover:bg-slate-700/50 transition-colors">
+                                    <td class="px-6 py-4 text-sm font-medium text-white">@sup.Name</td>
+                                    <td class="px-6 py-4 text-sm text-slate-300">@sup.ContactPerson</td>
+                                    <td class="px-6 py-4 text-sm text-slate-300">@sup.Email</td>
+                                    <td class="px-6 py-4 text-sm font-medium">
+                                        <button @onclick="() => RestoreSupplier(sup)" class="text-emerald-400 hover:text-emerald-300">Restore</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (activeTab == "sales")
+        {
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-700">
+                    <thead class="bg-slate-700/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Items</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Total</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-slate-800/30 divide-y divide-slate-700">
+                        @if (archivedSales == null)
+                        {
+                            <tr><td colspan="4" class="px-6 py-4 text-center text-slate-400">Loading...</td></tr>
+                        }
+                        else if (!archivedSales.Any())
+                        {
+                            <tr><td colspan="4" class="px-6 py-4 text-center text-slate-500">No archived sales found.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var sale in archivedSales)
+                            {
+                                <tr class="hover:bg-slate-700/50 transition-colors">
+                                    <td class="px-6 py-4 text-sm font-medium text-white">@sale.SaleDate.ToString("g")</td>
+                                    <td class="px-6 py-4 text-sm text-slate-300">
+                                        @sale.Items.Count items
+                                        <div class="text-xs text-slate-400">
+                                            @string.Join(", ", sale.Items.Take(2).Select(i => i.MedicineName))
+                                            @(sale.Items.Count > 2 ? "..." : "")
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-bold text-emerald-400">$@sale.TotalSaleAmount.ToString("N2")</td>
+                                    <td class="px-6 py-4 text-sm font-medium">
+                                        <button @onclick="() => RestoreSale(sale)" class="text-emerald-400 hover:text-emerald-300">Restore</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    private string activeTab = "medicines";
+
+    private List<Medicines>? archivedMedicines;
+    private List<Supplier>? archivedSuppliers;
+    private List<SaleRecord>? archivedSales;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAll();
+    }
+
+    private async Task LoadAll()
+    {
+        archivedMedicines = await MedicineService.GetArchivedMedicinesAsync();
+        archivedSuppliers = await SupplierService.GetArchivedSuppliersAsync();
+        archivedSales = await SaleService.GetArchivedSalesAsync();
+    }
+
+    private async Task RestoreMedicine(Medicines med)
+    {
+        bool confirm = await JS.InvokeAsync<bool>("confirm", $"Restore medicine '{med.Name}'?");
+        if(confirm)
+        {
+            await MedicineService.RestoreMedicineAsync(med.MedicineId);
+            await LoadAll();
+        }
+    }
+
+    private async Task RestoreSupplier(Supplier sup)
+    {
+        bool confirm = await JS.InvokeAsync<bool>("confirm", $"Restore supplier '{sup.Name}'?");
+        if(confirm)
+        {
+            await SupplierService.RestoreSupplierAsync(sup.SupplierId);
+            await LoadAll();
+        }
+    }
+
+    private async Task RestoreSale(SaleRecord sale)
+    {
+        bool confirm = await JS.InvokeAsync<bool>("confirm", $"Restore Sale #{sale.SaleId}? This will DEDUCT items from stock again.");
+        if(confirm)
+        {
+            try {
+                await SaleService.RestoreSaleAsync(sale.SaleId);
+                await LoadAll();
+            } catch (Exception ex) {
+                await JS.InvokeVoidAsync("alert", "Error restoring sale: " + ex.Message);
+            }
+        }
+    }
+}

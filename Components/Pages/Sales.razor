@@ -23,7 +23,7 @@
 					<input type="text"
 						   @bind="searchQuery"
 						   @bind:event="oninput"
-						   placeholder="Search by name"
+						   placeholder="     Search by name"
 						   class="w-full pl-12 pr-12 py-3 bg-slate-900/70 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
 					<svg class="absolute left-4 top-3.5 w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -180,14 +180,24 @@
 							}
 						</div>
 
-						<button @onclick="CompleteSale"
-								disabled="@(amountPaid < Total)"
-								class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-base shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2">
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-							</svg>
-							<span>Complete Sale</span>
-						</button>
+						<div class="flex space-x-2">
+							@if (editingSaleId.HasValue)
+							{
+								<button @onclick="CancelEdit"
+										class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all text-base shadow-lg flex items-center justify-center">
+									Cancel
+								</button>
+							}
+							
+							<button @onclick="CompleteSale"
+									disabled="@(amountPaid < Total)"
+									class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-base shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+								</svg>
+								<span>@(editingSaleId.HasValue ? "Update Sale" : "Complete Sale")</span>
+							</button>
+						</div>
 					</div>
 				}
 			</div>
@@ -225,59 +235,50 @@
 								<th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Disc %</th>
 								<th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Line Total</th>
 								<th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Sale Total</th>
-								@if (userRole != "Staff")
-								{
 									<th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
-								}
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-slate-800">
 							@foreach (var sale in recentSales)
 							{
-								var rowSpan = sale.Items.Count;
-								var isFirstRow = true;
-
 								@foreach (var item in sale.Items)
 								{
 									<tr class="hover:bg-slate-700/30 transition-colors">
-										@if (isFirstRow)
-										{
-											<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-400" rowspan="@rowSpan">@sale.SaleId</td>
-											<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300" rowspan="@rowSpan">@sale.SaleDate.ToString("MMM dd, hh:mm tt")</td>
-										}
+										<!-- Sale ID -->
+										<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-400">
+											@sale.SaleId
+										</td>
+										
+										<!-- Sale Date -->
+										<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+											@sale.SaleDate.ToString("MMM dd, hh:mm tt")
+										</td>
 
+										<!-- Medicine Details -->
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">@item.MedicineName</td>
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-right text-slate-400">$@item.UnitPrice</td>
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-right text-slate-400">@item.Quantity</td>
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-400">@item.DiscountPct%</td>
 										<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right text-emerald-400">$@item.TotalAmount.ToString("F2")</td>
 
-										@if (isFirstRow)
-										{
-											<td class="px-6 py-4 whitespace-nowrap text-base font-bold text-right text-emerald-400" rowspan="@rowSpan">$@sale.TotalSaleAmount</td>
+										<!-- Sale Total -->
+										<td class="px-6 py-4 whitespace-nowrap text-base font-bold text-right text-emerald-400">
+											$@sale.TotalSaleAmount
+										</td>
 
-											@if (userRole != "Staff")
-											{
-											<td class="px-6 py-4 whitespace-nowrap text-right" rowspan="@rowSpan">
+										<!-- Actions -->
+											<td class="px-6 py-4 whitespace-nowrap text-right">
 												<div class="flex items-center justify-end space-x-2">
 													<button @onclick="() => EditSale(sale.SaleId)"
-															class="text-blue-400 hover:text-blue-300 p-1 rounded hover:bg-slate-700/50 transition-colors">
-														<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-7l4-4m-4 4l4 4m-4-4H9m-1 7h.01M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h7" />
-														</svg>
+															class="text-blue-400 hover:text-white border border-blue-400/30 hover:bg-blue-600/20 px-3 py-1 rounded text-xs font-medium transition-colors">
+														Edit
 													</button>
 													<button @onclick="() => DeleteSale(sale.SaleId)"
-															class="text-red-400 hover:text-red-300 p-1 rounded hover:bg-slate-700/50 transition-colors">
-														<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2.002 2.002 0 0116.138 21H7.862a2.002 2.002 0 01-1.995-1.858L5 7m5 4v6m4-6 qv6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-														</svg>
+															class="text-red-400 hover:text-white border border-red-400/30 hover:bg-red-600/20 px-3 py-1 rounded text-xs font-medium transition-colors">
+														Archive
 													</button>
 												</div>
 											</td>
-											}
-
-											isFirstRow = false;
-										}
 									</tr>
 								}
 							}
@@ -301,6 +302,7 @@
 	private string searchQuery = "";
 	private string paymentMethod = "Cash";
 	private decimal amountPaid = 0;
+	private int? editingSaleId = null; // Track Edit Mode
 
 	private List<PharmacyManagementSystem.Services.Medicines> medicines = new();
 	private List<CartItem> cartItems = new();
@@ -320,7 +322,6 @@
 
 	protected override async Task OnInitializedAsync()
 	{
-		// Load user role from localStorage
 		try
 		{
 			userRole = await JS!.InvokeAsync<string>("localStorage.getItem", "userRole") ?? "Staff";
@@ -397,7 +398,6 @@
 
 	private async Task IncreaseQty(CartItem item)
 	{
-
 		if (item.Quantity < item.Medicine.Quantity)
 		{
 			item.Quantity++;
@@ -420,35 +420,65 @@
 	{
 		cartItems.Clear();
 		amountPaid = 0;
+		editingSaleId = null; // Reset edit mode
 		StateHasChanged();
+	}
+	
+	private void CancelEdit()
+	{
+		ClearCart();
 	}
 
 	private async Task CompleteSale()
 	{
-		if (amountPaid < Total) return;
+		// Validate Payment Amount
+		if (amountPaid < Total - 0.01m) 
+		{
+			if (JS is not null) await JS.InvokeVoidAsync("alert", "Amount Paid is less than Total!");
+			return;
+		}
 
 		try
 		{
-			await SaleService!.RecordSaleAsync(
-		cartItems,
-		paymentMethod,
-		Total,
-		TotalDiscount,
-		amountPaid
-	 );
+			if (editingSaleId.HasValue)
+			{
+				// UPDATE EXISTING SALE
+				await SaleService!.UpdateSaleAsync(
+					editingSaleId.Value,
+					cartItems,
+					paymentMethod,
+					Total,
+					TotalDiscount,
+					amountPaid
+				);
+				
+				if (JS is not null) await JS.InvokeVoidAsync("alert", $"Sale ID {editingSaleId} updated successfully!");
+			}
+			else
+			{
+				// CREATE NEW SALE
+				await SaleService!.RecordSaleAsync(
+					cartItems,
+					paymentMethod,
+					Total,
+					TotalDiscount,
+					amountPaid
+				);
 
-			if (JS is not null) await JS.InvokeVoidAsync("alert",
-			 $"Sale completed successfully!\nTotal: ${Total}\nPaid: ${amountPaid}\nChange: ${(amountPaid - Total)}");
+				if (JS is not null) await JS.InvokeVoidAsync("alert", 
+					$"Sale completed successfully!\nTotal: ${Total}\nPaid: ${amountPaid}\nChange: ${(amountPaid - Total)}");
+			}
 
 			cartItems.Clear();
 			amountPaid = 0;
+			editingSaleId = null;
 			await LoadMedicines();
 			await LoadRecentSales();
 		}
 		catch (Exception ex)
 		{
 			Console.WriteLine($"Sale Failed: {ex}");
-			if (JS is not null) await JS.InvokeVoidAsync("alert", $"ERROR: Sale transaction failed. Details: {ex.Message}");
+			if (JS is not null) await JS.InvokeVoidAsync("alert", $"ERROR: Transaction failed. Details: {ex.Message}");
 		}
 	}
 
@@ -456,7 +486,6 @@
 	{
 		try
 		{
-			// Find the sale in recent sales
 			var saleToEdit = recentSales.FirstOrDefault(s => s.SaleId == saleId);
 			if (saleToEdit == null)
 			{
@@ -464,14 +493,18 @@
 				return;
 			}
 
-			// Clear current cart
 			cartItems.Clear();
-
-			// Load sale items into cart
+			
+			// Load Items
 			foreach (var item in saleToEdit.Items)
 			{
-				// Find the medicine from the inventory
 				var medicine = medicines.FirstOrDefault(m => m.Name == item.MedicineName);
+				// Check by ID if Name fails (robustness)
+				if (medicine == null) 
+				{
+				    // Try to find by simulating or just ignore if deleted?
+				}
+				
 				if (medicine != null)
 				{
 					cartItems.Add(new CartItem
@@ -483,11 +516,12 @@
 				}
 			}
 
-			// Scroll to top to show the cart
+			editingSaleId = saleId; // Enter Edit Mode
+			amountPaid = saleToEdit.TotalSaleAmount; // Pre-fill amount paid
 			StateHasChanged();
 			
 			if (JS is not null) 
-				await JS.InvokeVoidAsync("alert", $"Sale ID {saleId} loaded into cart for editing. Modify items and complete the sale to update.");
+				await JS.InvokeVoidAsync("alert", $"Sale ID {saleId} loaded. Modify items and click 'Update Sale'.");
 		}
 		catch (Exception ex)
 		{
@@ -498,13 +532,33 @@
 
 	private async Task DeleteSale(int saleId)
 	{
-		// TODO: Implement confirmation and actual deletion logic in ISaleService
-		var confirm = await JS!.InvokeAsync<bool>("confirm", $"Are you sure you want to delete Sale ID {saleId}?");
-		if (confirm)
+		try
 		{
-			// Example: await SaleService!.DeleteSaleAsync(saleId);
-			if (JS is not null) await JS.InvokeVoidAsync("alert", $"Sale ID {saleId} deleted successfully! (Placeholder)");
-			await LoadRecentSales(); // Refresh the list after deletion
+			var confirm = await JS!.InvokeAsync<bool>("confirm", $"Are you sure you want to delete Sale ID {saleId}? This action cannot be undone.");
+			if (!confirm) return;
+
+			// Delete the sale from database
+			bool success = await SaleService!.DeleteSaleAsync(saleId);
+			
+			if (success)
+			{
+				if (JS is not null) 
+					await JS.InvokeVoidAsync("alert", $"Sale ID {saleId} deleted successfully!");
+				
+				// Reload the recent sales list
+				await LoadRecentSales();
+			}
+			else
+			{
+				if (JS is not null) 
+					await JS.InvokeVoidAsync("alert", $"Failed to delete Sale ID {saleId}. Please try again.");
+			}
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Error deleting sale: {ex.Message}");
+			if (JS is not null) 
+				await JS.InvokeVoidAsync("alert", $"Error deleting sale: {ex.Message}");
 		}
 	}
 

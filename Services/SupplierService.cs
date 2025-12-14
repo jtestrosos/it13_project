@@ -21,7 +21,7 @@ namespace PharmacyManagementSystem.Services
 		public async Task<List<Supplier>> GetAllSuppliersAsync()
 		{
 			var suppliers = new List<Supplier>();
-			string sql = "SELECT SupplierId, Name, ContactPerson, Email, Phone, Address, City, Country FROM [Suppliers]";
+			string sql = "SELECT SupplierId, Name, ContactPerson, Email, Phone, Address, City, Country FROM [Suppliers] WHERE IsDeleted = 0";
 
 			using (var connection = new SqlConnection(_connectionString))
 			{
@@ -102,7 +102,7 @@ namespace PharmacyManagementSystem.Services
 		// --- DELETE SUPPLIER ---
 		public async Task DeleteSupplierAsync(int Supplierid)
 		{
-			string sql = "DELETE FROM [Suppliers] WHERE SupplierId = @SupplierId";
+			string sql = "UPDATE [Suppliers] SET IsDeleted = 1 WHERE SupplierId = @SupplierId";
 
 			using (var connection = new SqlConnection(_connectionString))
 			{
@@ -110,6 +110,56 @@ namespace PharmacyManagementSystem.Services
 				using (var command = new SqlCommand(sql, connection))
 				{
 					command.Parameters.AddWithValue("@SupplierId", Supplierid);
+					await command.ExecuteNonQueryAsync();
+				}
+			}
+		}
+	
+	
+		// ------------------------------------------
+		// ARCHIVE / RESTORE
+		// ------------------------------------------
+		public async Task<List<Supplier>> GetArchivedSuppliersAsync()
+		{
+			var suppliers = new List<Supplier>();
+			string sql = "SELECT SupplierId, Name, ContactPerson, Email, Phone, Address, City, Country FROM [Suppliers] WHERE IsDeleted = 1";
+
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var command = new SqlCommand(sql, connection))
+				{
+					using (var reader = await command.ExecuteReaderAsync())
+					{
+						while (await reader.ReadAsync())
+						{
+							suppliers.Add(new Supplier
+							{
+								SupplierId = reader.GetInt32(reader.GetOrdinal("SupplierId")),
+								Name = reader.GetString(reader.GetOrdinal("Name")),
+								ContactPerson = reader.IsDBNull(reader.GetOrdinal("ContactPerson")) ? "" : reader.GetString(reader.GetOrdinal("ContactPerson")),
+								Email = reader.IsDBNull(reader.GetOrdinal("Email")) ? "" : reader.GetString(reader.GetOrdinal("Email")),
+								Phone = reader.IsDBNull(reader.GetOrdinal("Phone")) ? "" : reader.GetString(reader.GetOrdinal("Phone")),
+								Address = reader.IsDBNull(reader.GetOrdinal("Address")) ? "" : reader.GetString(reader.GetOrdinal("Address")),
+								City = reader.IsDBNull(reader.GetOrdinal("City")) ? "" : reader.GetString(reader.GetOrdinal("City")),
+								Country = reader.IsDBNull(reader.GetOrdinal("Country")) ? "" : reader.GetString(reader.GetOrdinal("Country"))
+							});
+						}
+					}
+				}
+			}
+			return suppliers;
+		}
+
+		public async Task RestoreSupplierAsync(int id)
+		{
+			string sql = "UPDATE [Suppliers] SET IsDeleted = 0 WHERE SupplierId = @Id";
+			using (var connection = new SqlConnection(_connectionString))
+			{
+				await connection.OpenAsync();
+				using (var command = new SqlCommand(sql, connection))
+				{
+					command.Parameters.AddWithValue("@Id", id);
 					await command.ExecuteNonQueryAsync();
 				}
 			}

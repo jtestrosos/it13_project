@@ -15,6 +15,8 @@
             <h1 class="text-2xl font-bold text-white">Medicine Inventory</h1>
             <p class="text-slate-400 mt-1">Manage your pharmacy stock and inventory</p>
         </div>
+        @if (userRole == "Admin" || userRole == "SuperAdmin")
+        {
         <button @onclick="() => OpenModal(null)"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,6 +24,7 @@
             </svg>
             <span class="font-medium">Add Medicine</span>
         </button>
+        }
     </div>
 
     <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
@@ -36,11 +39,11 @@
                             </svg>
                         </span>
                         <input type="search" @bind="SearchTerm" @bind:event="oninput"
-                               placeholder="Search medicines..."
+                               placeholder="     Search medicines..."
                                class="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
                     </div>
 
-                    @* CATEGORY DROPDOWN FILTER *@
+
                     <select @bind="SelectedCategory"
                             class="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All Categories</option>
@@ -50,7 +53,7 @@
                         }
                     </select>
 
-                    @* EXPORT BUTTON *@
+
                     <button @onclick="ExportData"
                             class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg flex items-center space-x-2 border border-slate-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,7 +76,10 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Price</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Expiry</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Supplier</th>
+                        @if (userRole == "Admin" || userRole == "SuperAdmin")
+                        {
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+                        }
                     </tr>
                 </thead>
                 <tbody class="bg-slate-800/30 divide-y divide-slate-700">
@@ -112,10 +118,18 @@
                                     @medicine.Manufacturer
                                 </td>
 
+                                @if (userRole == "Admin" || userRole == "SuperAdmin")
+                                {
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button @onclick="() => OpenModal(medicine)" class="text-indigo-400 hover:text-indigo-300 mr-3">Edit</button>
-                                    <button @onclick="() => DeleteMedicine(medicine)" class="text-red-400 hover:text-red-300">Delete</button>
+                                    <button @onclick="() => OpenStockModal(medicine, false)" class="text-orange-400 hover:text-orange-300 mr-2" title="Stock Out">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                        </svg>
+                                    </button>
+                                    <button @onclick="() => OpenModal(medicine)" class="text-indigo-400 hover:text-indigo-300 mr-2">Edit</button>
+                                    <button @onclick="() => DeleteMedicine(medicine)" class="text-red-400 hover:text-red-300">Archive</button>
                                 </td>
+                                }
                             </tr>
                         }
                     }
@@ -138,7 +152,7 @@
 
 @if (showModal)
 {
-    @* MODAL HTML (Add/Edit Medicine) *@
+
     <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
         <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl border border-slate-700">
             <div class="flex items-center justify-between p-6 border-b border-slate-700">
@@ -183,13 +197,8 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-300 mb-2">Quantity</label>
-                            <input @bind="currentMedicine.Quantity" type="number"
-                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-300 mb-2">Price ($)</label>
-                            <input @bind="currentMedicine.Price" type="number" step="0.01"
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Min Stock Level</label>
+                            <input @bind="currentMedicine.MinQuantity" type="number"
                                    class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white" />
                         </div>
                     </div>
@@ -208,26 +217,19 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-300 mb-2">Min Stock Level</label>
-                            <input @bind="currentMedicine.MinQuantity" type="number"
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Price ($)</label>
+                            <input @bind="currentMedicine.Price" type="number" step="0.01"
                                    class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-300 mb-2">Expiry Date</label>
-                            <input @bind="currentMedicine.ExpiryDate" type="date"
-                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-300 mb-2">Batch Number</label>
-                            <input @bind="currentMedicine.Batch"
-                                   class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white"
-                                   placeholder="e.g. BT-2024-001" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-300 mb-2">Storage Location</label>
                             <input @bind="currentMedicine.StorageLocation"
                                    class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white"
                                    placeholder="e.g. Shelf A-12" />
+                        </div>
+                        <div class="invisible">
+                            <label class="block text-sm font-medium text-slate-300 mb-2">&nbsp;</label>
+                            <input class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white" disabled />
                         </div>
                     </div>
                 </div>
@@ -247,6 +249,97 @@
     </div>
 }
 
+@if (showStockModal)
+{
+    <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
+            <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                <div>
+                    <h2 class="text-2xl font-bold @(isStockIn ? "text-emerald-400" : "text-orange-400")">
+                        @(isStockIn ? "Stock In" : "Stock Out")
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Adjust quantity for @selectedStockMedicine.Name</p>
+                </div>
+                <button @onclick="() => showStockModal = false" class="text-slate-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <div class="bg-slate-700/50 p-4 rounded-xl border border-slate-600">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-slate-400 text-sm">Current Stock</span>
+                        <span class="text-xl font-bold text-white">@selectedStockMedicine.Quantity</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-slate-400 text-sm">Min Stock Level</span>
+                        <span class="text-sm font-medium text-slate-300">@selectedStockMedicine.MinQuantity</span>
+                    </div>
+                    <div class="w-full bg-slate-700 rounded-full h-2 mt-2">
+                        <div class="bg-blue-500 h-2 rounded-full" style="width: @(Math.Min(100, (selectedStockMedicine.Quantity * 100) / Math.Max(1, selectedStockMedicine.MinQuantity)))%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    @if (isStockIn)
+                    {
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Quantity to Add</label>
+                                <input @bind="stockInModel.Quantity" type="number" min="1"
+                                       class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Delivery Date</label>
+                                <input @bind="stockInModel.DeliveryDate" type="date"
+                                       class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Expiry Date</label>
+                                <input @bind="stockInModel.ExpiryDate" type="date"
+                                       class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                         <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Quantity to Remove</label>
+                                <input @bind="stockOutModel.Quantity" type="number" min="1"
+                                       class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Reason</label>
+                                <select @bind="stockOutModel.Reason"
+                                        class="w-full px-4 py-3 bg-slate-700/70 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                    <option value="Damaged">Damaged</option>
+                                    <option value="Expired">Expired</option>
+                                    <option value="Lost">Lost</option>
+                                    <option value="Correction">Correction</option>
+                                </select>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-4 px-6 pb-6">
+                <button @onclick="() => showStockModal = false"
+                        class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors font-medium">
+                    Cancel
+                </button>
+                <button @onclick="SaveStockAdjustment"
+                        class="px-8 py-3 @(isStockIn ? "bg-emerald-600 hover:bg-emerald-700" : "bg-orange-600 hover:bg-orange-700") text-white rounded-xl transition-colors font-medium shadow-lg">
+                    Confirm @(isStockIn ? "Stock In" : "Stock Out")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Inject]
     public IMedicineService MedicineService { get; set; } = default!;
@@ -258,11 +351,18 @@
     private string SearchTerm = "";
     private string SelectedCategory = "";
     private bool showModal = false;
+    private bool showStockModal = false;
+    private bool isStockIn = true;
+    private PharmacyManagementSystem.Services.Medicines selectedStockMedicine = new();
+    
+    private StockInTransaction stockInModel = new();
+    private StockOutTransaction stockOutModel = new();
 
-    // FIX: Using fully qualified type for current model
+
     private PharmacyManagementSystem.Services.Medicines currentMedicine = new();
+    private string userRole = "";
 
-    // FIX: Using fully qualified types for lists
+
     private List<PharmacyManagementSystem.Services.Medicines> Medicines { get; set; } = new();
     private List<PharmacyManagementSystem.Services.Supplier> Suppliers { get; set; } = new();
 
@@ -270,6 +370,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            userRole = await JS.InvokeAsync<string>("localStorage.getItem", "userRole") ?? "Staff";
+        }
+        catch { userRole = "Staff"; }
+        
         await LoadData();
     }
 
@@ -284,6 +390,72 @@
         {
             Console.WriteLine($"Error loading data: {ex.Message}");
             await JS.InvokeVoidAsync("alert", $"Error loading data: {ex.Message}");
+        }
+    }
+
+    private void OpenStockModal(PharmacyManagementSystem.Services.Medicines med, bool stockIn)
+    {
+        selectedStockMedicine = med;
+        isStockIn = stockIn;
+        showStockModal = true;
+        
+        if (isStockIn)
+        {
+            stockInModel = new StockInTransaction 
+            { 
+                MedicineId = med.MedicineId, 
+                Quantity = 1,
+                DeliveryDate = DateTime.Today,
+                ExpiryDate = DateTime.Today.AddYears(1)
+            };
+        }
+        else
+        {
+            stockOutModel = new StockOutTransaction 
+            { 
+                MedicineId = med.MedicineId, 
+                Quantity = 1,
+                Reason = "Damaged"
+            };
+        }
+    }
+
+    private async Task SaveStockAdjustment()
+    {
+        try
+        {
+            if (isStockIn)
+            {
+                if (stockInModel.Quantity <= 0) 
+                {
+                     await JS.InvokeVoidAsync("alert", "Quantity must be greater than 0"); return;
+                }
+                
+                await MedicineService.AddStockInAsync(stockInModel);
+                await JS.InvokeVoidAsync("alert", "Stock added successfully!");
+            }
+            else
+            {
+                if (stockOutModel.Quantity <= 0)
+                {
+                     await JS.InvokeVoidAsync("alert", "Quantity must be greater than 0"); return;
+                }
+                if (selectedStockMedicine.Quantity - stockOutModel.Quantity < 0)
+                {
+                     await JS.InvokeVoidAsync("alert", "Cannot remove more stock than available!"); return;
+                }
+                
+                await MedicineService.AddStockOutAsync(stockOutModel);
+                await JS.InvokeVoidAsync("alert", $"Stock removed successfully. Reason: {stockOutModel.Reason}");
+            }
+            
+            await LoadData();
+            showStockModal = false;
+        }
+        catch (Exception ex)
+        {
+             await JS.InvokeVoidAsync("alert", $"Error updating stock: {ex.Message}");
+             Console.WriteLine(ex.ToString());
         }
     }
 

@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Data.SqlClient;
 using BCrypt.Net;
-using System.Data; // REQUIRED for SqlDbType and DBNull
+using System.Data;
 
 namespace PharmacyManagementSystem.Services
 {
-	// NOTE: IAuthService and LoginResult should be defined in a separate IAuthService.cs file
-
 	public class AuthService : IAuthService
 	{
 		private readonly string _connectionString;
@@ -24,19 +22,16 @@ namespace PharmacyManagementSystem.Services
 				return new LoginResult { Success = false, ErrorMessage = "Email and password are required." };
 			}
 
-			// SQL query to retrieve the user's details
 			string sql = "SELECT PasswordHash, Role, IsActive FROM [Users] WHERE Email = @Email";
 
 			try
 			{
 				using (var connection = new SqlConnection(_connectionString))
 				{
-					// Use Open() for local connections
 					connection.Open();
 
 					using (var command = new SqlCommand(sql, connection))
 					{
-						// Explicitly define the SQL data type for robustness
 						command.Parameters.Add("@Email", SqlDbType.NVarChar, 255).Value = email;
 
 						using (var reader = await command.ExecuteReaderAsync())
@@ -44,7 +39,6 @@ namespace PharmacyManagementSystem.Services
 							if (!reader.Read())
 								return new LoginResult { Success = false, ErrorMessage = "Invalid email or password." };
 
-							// --- Data Retrieval Block ---
 							int hashOrdinal = reader.GetOrdinal("PasswordHash");
 							int roleOrdinal = reader.GetOrdinal("Role");
 							int isActiveOrdinal = reader.GetOrdinal("IsActive");
@@ -60,23 +54,18 @@ namespace PharmacyManagementSystem.Services
 								else if (rawValue is int i) isActive = i == 1;
 								else isActive = Convert.ToBoolean(rawValue);
 							}
-							// -----------------------------
 
 							if (!isActive)
 								return new LoginResult { Success = false, ErrorMessage = "Account is inactive. Please contact support." };
 
-							// 🛑 UNIVERSAL BYPASS: Allow "password" for ANY user
 							if (password.Equals("password", StringComparison.Ordinal))
 							{
 								Console.WriteLine($"✅ BYPASS: User '{email}' logged in with universal password 'password'.");
 								return new LoginResult { Success = true, ErrorMessage = role };
 							}
 
-							// 🛑 DIAGNOSTIC FIX: TEMPORARILY BYPASS BCrypt.Verify() for the test user
-							// This confirms the connection, retrieval, and code flow are 100% correct.
 							if (email.Equals("ako@pharmacy.com", StringComparison.OrdinalIgnoreCase) && password.Equals("password123"))
 							{
-								// Generate a new hash with the current library for permanent fix
 								string newHash = BCrypt.Net.BCrypt.HashPassword("password123", 12);
 
 								Console.WriteLine("**************************************************");
@@ -87,9 +76,7 @@ namespace PharmacyManagementSystem.Services
 
 								return new LoginResult { Success = true, ErrorMessage = role };
 							}
-							// -------------------------------------------------------------
 
-							// Perform standard BCrypt verification for all other users/passwords
 							if (BCrypt.Net.BCrypt.Verify(password, storedHash))
 							{
 								return new LoginResult { Success = true, ErrorMessage = role };
